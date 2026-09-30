@@ -1,52 +1,124 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis V4.2</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:16px;font-weight:900}.y{color:#f3c400}.w{max-width:720px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{width:100%;border:0;border-radius:11px;padding:15px;font-size:16px;font-weight:900;background:#f3c400;color:#111;margin-top:8px}button:disabled{opacity:.55}input{width:100%;font-size:16px;padding:12px;margin:8px 0}.ref{font-size:34px;font-weight:950}.qty{font-size:38px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.err{background:#fff0ef;color:#8f1e17}.hide{display:none}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}img{width:100%;max-height:320px;object-fit:contain;border-radius:12px;margin-top:8px}</style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V4.1</header><div class="w">
-<div id="itemCard" class="c"><b id="step"></b><div class="bar"><i id="prog"></i></div><p class="muted">Separe somente este item.</p><div class="ref" id="ref"></div><h2 id="desc"></h2><p>Marca: <b id="brand"></b> • Modelo: <b id="model"></b></p><div class="qty" id="qty"></div></div>
-<div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide"><button id="verify">ANALISAR FOTO</button><div id="result"></div><p class="muted">A foto é reduzida no aparelho antes do envio. O sistema só avança após confirmação do modelo e da quantidade.</p></div>
-<div id="done" class="c hide"><h2>✓ PEDIDO CONFERIDO</h2><p>Todos os itens foram aprovados individualmente.</p></div></div>
-<script>
-const items=[{ref:"485",description:"Rolamento HCH 6201 2RS DDU C3",brand:"HCH",model:"6201",qty:2},{ref:"486",description:"Rolamento HCH 6202 2RS DDU C3",brand:"HCH",model:"6202",qty:1}];let i=0;
-const $=id=>document.getElementById(id);
-function render(){const x=items[i];$("step").textContent=`ITEM ${i+1} DE ${items.length}`;$("prog").style.width=(i/items.length*100)+"%";$("ref").textContent="REF. "+x.ref;$("desc").textContent=x.description;$("brand").textContent=x.brand;$("model").textContent=x.model;$("qty").textContent=x.qty+(x.qty===1?" UNIDADE":" UNIDADES");$("result").innerHTML="";$("photo").value="";$("preview").classList.add("hide")}
-$("photo").onchange=e=>{const f=e.target.files[0];if(f){$("preview").src=URL.createObjectURL(f);$("preview").classList.remove("hide")}};
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis V5</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}
+header{background:#202124;color:white;padding:16px;font-weight:900}.y{color:#f3c400}.w{max-width:760px;margin:auto;padding:14px}
+.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}
+button{width:100%;border:0;border-radius:11px;padding:15px;font-size:16px;font-weight:900;background:#f3c400;color:#111;margin-top:8px}
+button.secondary{background:#e9edf1}button:disabled{opacity:.55}input{width:100%;font-size:16px;padding:12px;margin:8px 0}
+.ref{font-size:34px;font-weight:950}.qty{font-size:38px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}
+.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}
+.hide{display:none}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}
+.muted{color:#687384}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}
+td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div{background:#f5f6f7;padding:10px;border-radius:10px}
+</style></head><body>
+<header><span class="y">PROELIS</span> • Separação Inteligente V5</header><div class="w">
 
-async function compress(file){
- const url=URL.createObjectURL(file);
- const img=new Image();
+<div id="orderImport" class="c">
+<h2>Novo pedido</h2>
+<p class="muted">Fotografe ou selecione a Separação de Mercadoria.</p>
+<input id="orderPhoto" type="file" accept="image/*" capture="environment">
+<img id="orderPreview" class="hide">
+<button id="readOrder">LER PEDIDO</button>
+<div id="orderResult"></div>
+</div>
+
+<div id="orderConfirm" class="c hide">
+<h2>Confirmar pedido reconhecido</h2>
+<div class="meta">
+<div><small>Venda</small><br><b id="sale"></b></div>
+<div><small>Data</small><br><b id="date"></b></div>
+</div>
+<p><small>Cliente</small><br><b id="client"></b></p>
+<div style="overflow:auto"><table><thead><tr><th>Qtde</th><th>Ref.</th><th>Descrição</th><th></th></tr></thead><tbody id="orderRows"></tbody></table></div>
+<button id="startPicking">CONFIRMAR PEDIDO E INICIAR SEPARAÇÃO</button>
+<button id="backOrder" class="secondary">TROCAR FOTO DO PEDIDO</button>
+</div>
+
+<div id="picking" class="hide">
+<div id="itemCard" class="c"><b id="step"></b><div class="bar"><i id="prog"></i></div><p class="muted">Separe somente este item.</p>
+<div class="ref" id="ref"></div><h2 id="desc"></h2><p>Marca: <b id="brand"></b> • Modelo: <b id="model"></b></p><div class="qty" id="qty"></div></div>
+<div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide">
+<button id="verify">ANALISAR FOTO</button><div id="result"></div>
+<p class="muted">O sistema só avança após confirmação visual do item e da quantidade.</p></div>
+</div>
+
+<div id="done" class="c hide"><h2>✓ PEDIDO CONFERIDO</h2><p>Todos os itens foram aprovados individualmente.</p><button onclick="location.reload()">NOVO PEDIDO</button></div>
+</div>
+
+<script>
+let items=[], i=0, orderData=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+
+async function compress(file,max=1600,q=.82){
+ const url=URL.createObjectURL(file),img=new Image();
  await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src=url});
- const max=1280, scale=Math.min(1,max/Math.max(img.width,img.height));
- const c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
- c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
- return await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error("Falha ao preparar imagem")),"image/jpeg",0.78));
+ const scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");
+ c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+ return await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error("Falha ao preparar imagem")),"image/jpeg",q));
 }
-$("verify").onclick=async()=>{
- const file=$("photo").files[0];if(!file){$("result").innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}
- const x=items[i];$("verify").disabled=true;$("verify").textContent="PREPARANDO FOTO...";$("result").innerHTML="";
+$("orderPhoto").onchange=e=>{const f=e.target.files[0];if(f){$("orderPreview").src=URL.createObjectURL(f);$("orderPreview").classList.remove("hide")}};
+
+$("readOrder").onclick=async()=>{
+ const file=$("orderPhoto").files[0]; if(!file){$("orderResult").innerHTML='<div class="inc">Tire ou selecione a foto do pedido.</div>';return}
+ $("readOrder").disabled=true;$("readOrder").textContent="LENDO PEDIDO...";$("orderResult").innerHTML="";
  try{
-   const blob=await compress(file);
-   const fd=new FormData();fd.append("photo",blob,"photo.jpg");fd.append("ref",x.ref);fd.append("qty",String(x.qty));
-   $("verify").textContent="ANALISANDO...";
-   const resp=await fetch("/.netlify/functions/verify",{method:"POST",body:fd});
+   const blob=await compress(file),fd=new FormData();fd.append("photo",blob,"pedido.jpg");
+   const resp=await fetch("/.netlify/functions/read-order",{method:"POST",body:fd});
    const raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}
    if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);
-   const cls=d.status==="APROVADO"?"ok":d.status==="REPROVADO"?"bad":"inc";
-   const markings = Array.isArray(d.visible_markings)
-  ? d.visible_markings.join(", ")
-  : (d.visible_markings || "Não identificadas");
+   if(!Array.isArray(d.items)||!d.items.length)throw new Error("Nenhum item foi reconhecido.");
+   orderData=d; $("sale").textContent=d.sale_number||"—";$("date").textContent=d.date||"—";$("client").textContent=d.client||"—";
+   $("orderRows").innerHTML=d.items.map((x,n)=>`<tr data-n="${n}">
+     <td><input class="q" type="number" min="1" value="${Number(x.qty)||1}" style="width:75px"></td>
+     <td><input class="r" value="${esc(x.ref||"")}" style="width:90px"></td>
+     <td><input class="d" value="${esc(x.description||"")}"></td>
+     <td><button class="secondary del" type="button" style="padding:8px;margin:0">×</button></td></tr>`).join("");
+   document.querySelectorAll(".del").forEach(b=>b.onclick=()=>b.closest("tr").remove());
+   $("orderImport").classList.add("hide");$("orderConfirm").classList.remove("hide");
+ }catch(e){$("orderResult").innerHTML=`<div class="err"><h3>ERRO NA LEITURA</h3>${esc(e.message||e)}</div>`}
+ finally{$("readOrder").disabled=false;$("readOrder").textContent="LER PEDIDO"}
+};
+$("backOrder").onclick=()=>{$("orderConfirm").classList.add("hide");$("orderImport").classList.remove("hide")};
 
-$("result").innerHTML=`
-<div class="${cls}">
-  <h3>${d.status}</h3>
-  <b>Esperado:</b> ${x.brand} ${x.model} — ${x.qty} un.<br>
-  <b>Identificado:</b> ${d.identified_brand || "—"} ${d.identified_model || "—"}<br>
-  <b>Quantidade:</b> ${d.identified_quantity ?? "—"}<br>
-  <b>Vedação:</b> ${d.identified_seal || "—"}<br>
-  <b>Marcações:</b> ${markings}<br><br>
-  ${d.reason || ""}
-</div>`;
-   if(d.status==="APROVADO")setTimeout(()=>{i++;if(i<items.length)render();else{$("itemCard").classList.add("hide");$("photoCard").classList.add("hide");$("done").classList.remove("hide")}},1500);
- }catch(e){$("result").innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${String(e.message||e)}</div>`}
+function infer(desc){
+ const u=(desc||"").toUpperCase();
+ const brand=u.includes("HCH")?"HCH":u.includes("N.S.K")||u.includes("NSK")?"NSK":"";
+ const m=u.match(/\b(60\d{2}|62\d{2}|63\d{2}|6\d{2})\b/);
+ return {brand,model:m?m[1]:""};
+}
+$("startPicking").onclick=()=>{
+ items=[...$("orderRows").querySelectorAll("tr")].map(tr=>{
+   const description=tr.querySelector(".d").value.trim(),inf=infer(description);
+   return {qty:Number(tr.querySelector(".q").value),ref:tr.querySelector(".r").value.trim(),description,brand:inf.brand,model:inf.model};
+ }).filter(x=>x.ref&&x.qty>0);
+ if(!items.length){alert("O pedido precisa ter pelo menos um item.");return}
+ i=0;$("orderConfirm").classList.add("hide");$("picking").classList.remove("hide");render();
+};
+function render(){
+ const x=items[i];$("step").textContent=`ITEM ${i+1} DE ${items.length}`;$("prog").style.width=(i/items.length*100)+"%";
+ $("ref").textContent="REF. "+x.ref;$("desc").textContent=x.description;$("brand").textContent=x.brand||"A confirmar";$("model").textContent=x.model||"A confirmar";
+ $("qty").textContent=x.qty+(x.qty===1?" UNIDADE":" UNIDADES");$("result").innerHTML="";$("photo").value="";$("preview").classList.add("hide");
+}
+$("photo").onchange=e=>{const f=e.target.files[0];if(f){$("preview").src=URL.createObjectURL(f);$("preview").classList.remove("hide")}};
+
+$("verify").onclick=async()=>{
+ const file=$("photo").files[0];if(!file){$("result").innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}
+ const x=items[i];$("verify").disabled=true;$("verify").textContent="ANALISANDO...";$("result").innerHTML="";
+ try{
+   const blob=await compress(file,1280,.78),fd=new FormData();fd.append("photo",blob,"photo.jpg");fd.append("ref",x.ref);fd.append("qty",String(x.qty));
+   fd.append("description",x.description);fd.append("brand",x.brand);fd.append("model",x.model);
+   const resp=await fetch("/.netlify/functions/verify",{method:"POST",body:fd}),raw=await resp.text();let d;
+   try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}
+   if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);
+   const cls=d.status==="APROVADO"?"ok":d.status==="REPROVADO"?"bad":"inc";
+   const markings=Array.isArray(d.visible_markings)?d.visible_markings.join(", "):(d.visible_markings||"Não identificadas");
+   $("result").innerHTML=`<div class="${cls}"><h3>${esc(d.status)}</h3><b>Esperado:</b> ${esc(x.brand)} ${esc(x.model)} — ${x.qty} un.<br>
+   <b>Identificado:</b> ${esc(d.identified_brand||"—")} ${esc(d.identified_model||"—")}<br><b>Quantidade:</b> ${esc(d.identified_quantity??"—")}<br>
+   <b>Vedação:</b> ${esc(d.identified_seal||"—")}<br><b>Marcações:</b> ${esc(markings)}<br><br>${esc(d.reason||"")}</div>`;
+   if(d.status==="APROVADO")setTimeout(()=>{i++;if(i<items.length)render();else{$("picking").classList.add("hide");$("done").classList.remove("hide")}},1200);
+ }catch(e){$("result").innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}
  finally{$("verify").disabled=false;$("verify").textContent="ANALISAR FOTO"}
 };
-render();
 </script></body></html>
