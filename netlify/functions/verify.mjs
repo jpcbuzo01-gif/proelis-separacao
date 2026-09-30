@@ -38,3 +38,4 @@ Retorne SOMENTE JSON válido:
   if(isHCH&&expectedDDU&&modelOK&&brandOK&&qtyOK&&shows2RS&&!showsZZ){d.status="APROVADO";d.identified_seal="DDU (equivalente HCH 2RS)";d.reason=`Produto confirmado: ${exp.brand} ${exp.model}, ${qty} unidade(s). Para HCH, 2RS é equivalente a DDU.`}
   return json(d);
  }catch(e){return json({error:e?.message||"Erro interno na análise."},500)}
+};
