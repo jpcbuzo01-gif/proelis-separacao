@@ -30,7 +30,20 @@ $("verify").onclick=async()=>{
    const raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}
    if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);
    const cls=d.status==="APROVADO"?"ok":d.status==="REPROVADO"?"bad":"inc";
-   $("result").innerHTML=`<div class="${cls}"><h3>${d.status}</h3><b>Esperado:</b> ${x.brand} ${x.model} — ${x.qty} un.<br><b>Identificado:</b> ${(d.identified_brand||"não confirmado")} ${(d.identified_model||"")}<br><b>Quantidade:</b> ${d.identified_quantity??"não confirmada"}<br><b>Marcações:</b> ${(d.visible_markings||[]).join(", ")||"não confirmadas"}<br><br>${d.reason||""}</div>`;
+   const markings = Array.isArray(d.visible_markings)
+  ? d.visible_markings.join(", ")
+  : (d.visible_markings || "Não identificadas");
+
+$("result").innerHTML=`
+<div class="${cls}">
+  <h3>${d.status}</h3>
+  <b>Esperado:</b> ${x.brand} ${x.model} — ${x.qty} un.<br>
+  <b>Identificado:</b> ${d.identified_brand || "—"} ${d.identified_model || "—"}<br>
+  <b>Quantidade:</b> ${d.identified_quantity ?? "—"}<br>
+  <b>Vedação:</b> ${d.identified_seal || "—"}<br>
+  <b>Marcações:</b> ${markings}<br><br>
+  ${d.reason || ""}
+</div>`;
    if(d.status==="APROVADO")setTimeout(()=>{i++;if(i<items.length)render();else{$("itemCard").classList.add("hide");$("photoCard").classList.add("hide");$("done").classList.remove("hide")}},1500);
  }catch(e){$("result").innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${String(e.message||e)}</div>`}
  finally{$("verify").disabled=false;$("verify").textContent="ANALISAR FOTO"}
