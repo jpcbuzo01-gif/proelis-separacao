@@ -1,4 +1,8 @@
-const MODEL = Netlify.env.get("OPENAI_VISION_MODEL") || "gpt-5.6-luna";
+const MODEL = process.env.OPENAI_VISION_MODEL || "gpt-5.6-luna";
+const S = process.env.SUPABASE_URL || "https://mbxmhojgoqzqfxzajafb.supabase.co";
+const PUB = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_6YxdvuPcirHBODEEylOUsQ_xsehFq_d";
+const SECRET = process.env.SUPABASE_SECRET_KEY;
+const env = name => process.env[name];
 
 function norm(v){ return String(v ?? "").trim(); }
 function upper(v){ return norm(v).toUpperCase(); }
@@ -22,10 +26,30 @@ function extractJSON(text){
   }
 }
 
+
+async function getReferenceImage(ref){
+  if(!SECRET || !ref) return null;
+  const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
+  const pr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=id&limit=1`,{headers:h});
+  if(!pr.ok) return null;
+  const pa=await pr.json(),p=pa?.[0]; if(!p) return null;
+  const ir=await fetch(`${S}/rest/v1/product_images?product_id=eq.${p.id}&select=storage_path,principal,ordem&order=principal.desc,ordem.asc&limit=1`,{headers:h});
+  if(!ir.ok) return null;
+  const ia=await ir.json(),pic=ia?.[0]; if(!pic?.storage_path) return null;
+  const sr=await fetch(`${S}/storage/v1/object/sign/product-images/${pic.storage_path}`,{
+    method:"POST",headers:{...h,"content-type":"application/json"},body:JSON.stringify({expiresIn:300})
+  });
+  if(!sr.ok) return null;
+  const sd=await sr.json();
+  const signed=sd.signedURL||sd.signedUrl;
+  if(!signed) return null;
+  return signed.startsWith("http")?signed:`${S}/storage/v1${signed}`;
+}
+
 export default async (req) => {
   if(req.method !== "POST") return new Response(JSON.stringify({error:"Método não permitido"}),{status:405,headers:{"content-type":"application/json"}});
   try{
-    const key=Netlify.env.get("OPENAI_API_KEY");
+    const key=env("OPENAI_API_KEY");
     if(!key) throw new Error("OPENAI_API_KEY não configurada.");
     const fd=await req.formData();
     const photo=fd.get("photo");
@@ -34,10 +58,13 @@ export default async (req) => {
       brand:norm(fd.get("brand")), model:norm(fd.get("model"))
     };
     if(!photo || typeof photo.arrayBuffer!=="function") throw new Error("Foto não recebida.");
+    const referenceImage=await getReferenceImage(expected.ref);
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
     const prompt=`Você é o conferente visual de expedição da Proelis.
-Compare SOMENTE o que é visualmente sustentado pela foto com o item esperado.
+Você receberá a FOTO DO SEPARADOR e, quando disponível, uma FOTO OFICIAL DE REFERÊNCIA do catálogo.
+A foto oficial é evidência complementar: ajuda a reconhecer família, embalagem, formato e marcações, mas NÃO pode sozinha causar reprovação.
+A decisão deve ser sustentada principalmente pelo que está visível na FOTO DO SEPARADOR.
 
 ITEM ESPERADO:
 Referência interna Proelis: ${expected.ref}
@@ -53,6 +80,9 @@ REGRAS:
 - Para rolamentos HCH, "2RS" é equivalente a "DDU". Não reprove HCH apenas porque a embalagem mostra 2RS e a descrição esperada usa DDU.
 - "ZZ" NÃO é equivalente a DDU/2RS.
 - Não adivinhe marcações ilegíveis.
+- A FOTO OFICIAL pode ter embalagem, ângulo, cor ou revisão visual diferente. Diferença estética isolada NÃO reprova.
+- Se a foto oficial não estiver disponível, siga normalmente usando os dados textuais e a foto do separador.
+- Se o item do separador não permitir confirmar marca/modelo/quantidade com segurança, use INCONCLUSIVO, não REPROVADO.
 - Se houver reprovação, error_type deve indicar a causa PRINCIPAL:
   produto = produto/tipo diferente;
   modelo = modelo/código/referência técnica incompatível;
@@ -75,8 +105,12 @@ Responda APENAS JSON válido:
     const body={
       model:MODEL,
       input:[{role:"user",content:[
-        {type:"input_text",text:prompt},
-        {type:"input_image",image_url:`data:${mime};base64,${b64}`}
+        {type:"input_text",text:prompt+"\n\nIMAGEM 1: FOTO DO SEPARADOR (imagem a ser julgada)."},
+        {type:"input_image",image_url:`data:${mime};base64,${b64}`,detail:"high"},
+        ...(referenceImage?[
+          {type:"input_text",text:"IMAGEM 2: FOTO OFICIAL DE REFERÊNCIA DO CATÁLOGO. Use apenas como evidência complementar; não reprove por diferença estética isolada."},
+          {type:"input_image",image_url:referenceImage,detail:"high"}
+        ]:[])
       ]}],
       max_output_tokens:700
     };
@@ -109,6 +143,7 @@ Responda APENAS JSON válido:
     }
     if(d.status==="APROVADO") d.error_type="nenhum";
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
+    d.reference_image_used=Boolean(referenceImage);
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
