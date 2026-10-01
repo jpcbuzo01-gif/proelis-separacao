@@ -3,17 +3,7 @@ const json=(s,b)=>new Response(JSON.stringify(b),{status:s,headers:{"content-typ
 const H=(secret,token)=>({apikey:secret,Authorization:`Bearer ${token}`});
 const clean=s=>(s??"").toString().trim();
 const key=s=>clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
-const val=(row,...names)=>{
-  const map={}; for(const [k,v] of Object.entries(row)) map[key(k)]=v;
-  for(const n of names){const v=map[key(n)]; if(v!==undefined)return clean(v)}
-  return "";
-};
-function parseCSV(text){
- const lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).filter(x=>x.trim()); if(!lines.length)return [];
- const delim=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
- function row(line){let a=[],v="",q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c=='"'){if(q&&line[i+1]=='"'){v+='"';i++}else q=!q}else if(c===delim&&!q){a.push(v);v=""}else v+=c}a.push(v);return a}
- const head=row(lines[0]).map(clean);return lines.slice(1).map(l=>{const a=row(l),o={};head.forEach((h,i)=>o[h]=clean(a[i]));return o});
-}
+const val=(row,...names)=>{const map={};for(const [k,v] of Object.entries(row))map[key(k)]=v;for(const n of names){const v=map[key(n)];if(v!==undefined)return clean(v)}return""};
 async function admin(token,secret){
  const ur=await fetch(`${S}/auth/v1/user`,{headers:H(secret,token)});if(!ur.ok)return null;const u=await ur.json();
  const pr=await fetch(`${S}/rest/v1/profiles?id=eq.${encodeURIComponent(u.id)}&select=role,ativo`,{headers:H(secret,token)}),p=await pr.json();
@@ -24,56 +14,30 @@ export default async req=>{
  try{
   const secret=process.env.SUPABASE_SECRET_KEY,token=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
   if(!secret)return json(500,{error:"SUPABASE_SECRET_KEY não configurada."});const user=await admin(token,secret);if(!user)return json(403,{error:"Apenas administradores."});
-  const fd=await req.formData(),file=fd.get("file");if(!file)return json(400,{error:"Envie o CSV."});
-  const rows=parseCSV(await file.text());
-  if(!rows.length)return json(400,{error:"O CSV está vazio ou não pôde ser lido."});
-  const rawHeaders=Object.keys(rows[0]), normalizedHeaders=rawHeaders.map(key);
-  let refHeader=rawHeaders.find(h=>{
-    const k=key(h);
-    return k==="referencia" || k==="referancia" || k.startsWith("refer");
-  });
-  // Layout oficial CADASTRO PRODUTOS.csv: Referência é a 5ª coluna.
-  if(!refHeader && rawHeaders.length>=5) refHeader=rawHeaders[4];
-  if(!refHeader){
-    return json(400,{error:"Coluna de Referência não encontrada no CSV.",headers:rawHeaders});
-  }
-  let created=0,updated=0,skipped=0,photos=0,errors=0;
+  const body=await req.json(),rows=Array.isArray(body.rows)?body.rows:[];
+  if(!rows.length)return json(400,{error:"Lote vazio."});
+  let created=0,updated=0,skipped=0,errors=0;const error_examples=[];
   for(const r of rows){
-   const ref=clean(r[refHeader]);if(!ref){skipped++;continue}
-   const name=val(r,"Nome produto")||`Produto REF. ${ref}`,brand=val(r,"Marca"),cat=val(r,"Nome categoria");
-   const c=val(r,"Comprimento"),w=val(r,"Largura"),h=val(r,"Altura");
-   const medidas=[c,w,h].filter(Boolean).join(" × ");
-   let grams=parseFloat(val(r,"Peso em gramas").replace(",", "."));let kg=Number.isFinite(grams)?grams/1000:null;
-   const qr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=*`,{headers:H(secret,token)}),arr=await qr.json();let p=arr?.[0];
-   if(!p){
-    const body={referencia:ref,nome:name,descricao:name,categoria:cat||null,marca:brand||null,peso_kg:kg,medidas:medidas||null,origem:"misto",created_by:user.id,updated_by:user.id};
-    const ir=await fetch(`${S}/rest/v1/products`,{method:"POST",headers:{...H(secret,token),"content-type":"application/json","prefer":"return=representation"},body:JSON.stringify(body)});
-    if(!ir.ok){errors++;continue}p=(await ir.json())[0];created++;
-   }else{
-    // Fill only empty fields: manual/admin values retain priority.
-    const patch={updated_by:user.id};
-    if(!p.nome&&name)patch.nome=name;if(!p.descricao&&name)patch.descricao=name;if(!p.categoria&&cat)patch.categoria=cat;
-    if(!p.marca&&brand)patch.marca=brand;if(p.peso_kg==null&&kg!=null)patch.peso_kg=kg;if(!p.medidas&&medidas)patch.medidas=medidas;
-    const ur=await fetch(`${S}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers:{...H(secret,token),"content-type":"application/json"},body:JSON.stringify(patch)});
-    if(!ur.ok){errors++;continue}updated++;
-   }
-   const img=val(r,"Imagem principal");if(img){
-    const er=await fetch(`${S}/rest/v1/product_images?product_id=eq.${p.id}&select=id&limit=1`,{headers:H(secret,token)}),ei=await er.json();
-    if(!ei?.length){
-     try{
-      const im=await fetch(img,{headers:{"user-agent":"Mozilla/5.0 ProelisCatalogImport/1.0"},signal:AbortSignal.timeout(7000)});
-      if(im.ok){
-       const bytes=await im.arrayBuffer(),ct=im.headers.get("content-type")||"image/jpeg",ext=ct.includes("png")?"png":ct.includes("webp")?"webp":"jpg",path=`site/${ref}/${Date.now()}.${ext}`;
-       const up=await fetch(`${S}/storage/v1/object/product-images/${path}`,{method:"POST",headers:{apikey:secret,"content-type":ct,"x-upsert":"false"},body:bytes});
-       if(up.ok){
-        const pi=await fetch(`${S}/rest/v1/product_images`,{method:"POST",headers:{...H(secret,token),"content-type":"application/json"},body:JSON.stringify({product_id:p.id,storage_path:path,origem:"site_proelis",url_origem:img,principal:true,created_by:user.id})});
-        if(pi.ok)photos++;
-       }
-      }
-     }catch{}
+   const ref=clean(r.referencia);if(!ref){skipped++;continue}
+   const name=clean(r.nome)||`Produto REF. ${ref}`,brand=clean(r.marca),cat=clean(r.categoria),medidas=clean(r.medidas),img=clean(r.imagem);
+   const kg=(r.peso_kg===null||r.peso_kg===""||!Number.isFinite(Number(r.peso_kg)))?null:Number(r.peso_kg);
+   try{
+    const qr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=*`,{headers:H(secret,token)}),arr=await qr.json();let p=arr?.[0];
+    if(!p){
+     const data={referencia:ref,nome:name,descricao:name,categoria:cat||null,marca:brand||null,peso_kg:kg,medidas:medidas||null,origem:"misto",created_by:user.id,updated_by:user.id};
+     if(img)data.especificacoes={csv_image_url:img};
+     const ir=await fetch(`${S}/rest/v1/products`,{method:"POST",headers:{...H(secret,token),"content-type":"application/json","prefer":"return=representation"},body:JSON.stringify(data)});
+     if(!ir.ok)throw new Error(`INSERT ${ir.status}: ${(await ir.text()).slice(0,160)}`);created++;
+    }else{
+     const patch={updated_by:user.id},spec={...(p.especificacoes||{})};
+     if(!p.nome&&name)patch.nome=name;if(!p.descricao&&name)patch.descricao=name;if(!p.categoria&&cat)patch.categoria=cat;
+     if(!p.marca&&brand)patch.marca=brand;if(p.peso_kg==null&&kg!=null)patch.peso_kg=kg;if(!p.medidas&&medidas)patch.medidas=medidas;
+     if(img&&!spec.csv_image_url){spec.csv_image_url=img;patch.especificacoes=spec}
+     const ur=await fetch(`${S}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers:{...H(secret,token),"content-type":"application/json"},body:JSON.stringify(patch)});
+     if(!ur.ok)throw new Error(`UPDATE ${ur.status}: ${(await ur.text()).slice(0,160)}`);updated++;
     }
-   }
+   }catch(e){errors++;if(error_examples.length<5)error_examples.push(`REF. ${ref}: ${e.message||e}`)}
   }
-  return json(200,{ok:true,total:rows.length,created,updated,skipped,photos,errors});
+  return json(200,{ok:true,total:rows.length,created,updated,skipped,errors,error_examples});
  }catch(e){return json(500,{error:e?.message||String(e)})}
 };
