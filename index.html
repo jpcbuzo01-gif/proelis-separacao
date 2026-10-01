@@ -4,7 +4,7 @@
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
 .catalog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.catalog-card{border:1px solid #e1e5e9;border-radius:13px;padding:13px;margin-top:10px}.catalog-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.catalog-photo{border:1px solid #dde2e7;border-radius:12px;padding:7px}.catalog-photo img{height:150px;object-fit:contain;margin:0}.reference-box{background:#f8fafb;border:1px solid #dfe5ea;border-radius:13px;padding:12px;margin-top:12px}.reference-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.reference-photos img{height:160px;object-fit:contain;background:white;border:1px solid #e1e5e9;margin:0}@media(max-width:620px){.catalog-grid,.catalog-photo-grid,.reference-photos{grid-template-columns:1fr}}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V6.6.3</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V6.7</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -39,7 +39,7 @@
   <div class="c">
     <div class="top">
       <div><h2>Catálogo de produtos</h2><p class="muted">Base interna por Referência Proelis. Dados editados aqui têm prioridade operacional.</p></div>
-      <div><button id="syncCatalogBtn" class="secondary">SINCRONIZAR CATÁLOGO PROELIS</button> <button id="newProductBtn">+ NOVO PRODUTO</button></div>
+      <div><input id="catalogCsvFile" type="file" accept=".csv,text/csv" style="display:none"><button id="importCatalogBtn" class="secondary">IMPORTAR CADASTRO DE PRODUTOS</button> <button id="syncCatalogBtn" class="secondary">SINCRONIZAR CATÁLOGO PROELIS</button> <button id="newProductBtn">+ NOVO PRODUTO</button></div>
     </div>
     <div id="catalogSyncMsg"></div><input id="catalogSearch" placeholder="Buscar por referência, nome, marca ou modelo">
     <div id="catalogList"></div>
@@ -279,6 +279,20 @@ async function safeJson(r){
   const t=await r.text();
   try{return JSON.parse(t)}catch{throw new Error(`Resposta inválida do servidor (HTTP ${r.status}).`)}
 }
+async function importCatalogCSV(file){
+  if(!file)return;
+  $('importCatalogBtn').disabled=true;
+  $('catalogSyncMsg').innerHTML='<div class="inc"><b>Importando cadastro de produtos...</b><br>Não feche esta página.</div>';
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const r=await fetch('/.netlify/functions/import-catalog',{method:'POST',headers:{'Authorization':'Bearer '+session.access_token},body:fd});
+    const d=await safeJson(r);if(!r.ok)throw new Error(d.error||'Falha na importação');
+    $('catalogSyncMsg').innerHTML=`<div class="ok"><b>Cadastro importado.</b><br>Linhas: ${d.total} • Novos: ${d.created} • Complementados: ${d.updated} • Sem referência: ${d.skipped} • Fotos copiadas: ${d.photos} • Erros: ${d.errors}</div>`;
+    await loadCatalog();
+  }catch(e){$('catalogSyncMsg').innerHTML=`<div class="err">${esc(e.message||e)}</div>`}
+  finally{$('importCatalogBtn').disabled=false;$('catalogCsvFile').value=''}
+}
+
 async function syncWholeCatalog(){
   if(profile.role!=='admin')return;
   if(!confirm('Sincronizar o catálogo com o site Proelis? O processo será feito em lotes e pode levar alguns minutos.'))return;
@@ -447,6 +461,8 @@ if($('newUserBtn'))$('newUserBtn').onclick=()=>{$('newUserForm').classList.remov
 if($('catalogSearch'))$('catalogSearch').oninput=renderCatalogList;
 if($('newProductBtn'))$('newProductBtn').onclick=()=>openProductEditor();
 if($('syncCatalogBtn'))$('syncCatalogBtn').onclick=syncWholeCatalog;
+if($('importCatalogBtn'))$('importCatalogBtn').onclick=()=>$('catalogCsvFile').click();
+if($('catalogCsvFile'))$('catalogCsvFile').onchange=e=>importCatalogCSV(e.target.files?.[0]);
 if($('closeProductEditor'))$('closeProductEditor').onclick=()=>$('productEditor').classList.add('hide');
 if($('saveProductBtn'))$('saveProductBtn').onclick=saveProduct;
 if($('syncProductBtn'))$('syncProductBtn').onclick=syncProductFromSite;
