@@ -2,6 +2,12 @@ const S=process.env.SUPABASE_URL||"https://mbxmhojgoqzqfxzajafb.supabase.co";
 const json=(s,b)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json; charset=utf-8"}});
 const H=(secret,token)=>({apikey:secret,Authorization:`Bearer ${token}`});
 const clean=s=>(s??"").toString().trim();
+const key=s=>clean(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const val=(row,...names)=>{
+  const map={}; for(const [k,v] of Object.entries(row)) map[key(k)]=v;
+  for(const n of names){const v=map[key(n)]; if(v!==undefined)return clean(v)}
+  return "";
+};
 function parseCSV(text){
  const lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).filter(x=>x.trim()); if(!lines.length)return [];
  const delim=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
@@ -19,13 +25,19 @@ export default async req=>{
   const secret=process.env.SUPABASE_SECRET_KEY,token=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
   if(!secret)return json(500,{error:"SUPABASE_SECRET_KEY não configurada."});const user=await admin(token,secret);if(!user)return json(403,{error:"Apenas administradores."});
   const fd=await req.formData(),file=fd.get("file");if(!file)return json(400,{error:"Envie o CSV."});
-  const rows=parseCSV(await file.text());let created=0,updated=0,skipped=0,photos=0,errors=0;
+  const rows=parseCSV(await file.text());
+  if(!rows.length)return json(400,{error:"O CSV está vazio ou não pôde ser lido."});
+  const normalizedHeaders=Object.keys(rows[0]).map(key);
+  if(!normalizedHeaders.includes("referencia")){
+    return json(400,{error:"Coluna de Referência não encontrada no CSV.",headers:Object.keys(rows[0])});
+  }
+  let created=0,updated=0,skipped=0,photos=0,errors=0;
   for(const r of rows){
-   const ref=clean(r["Referência"]);if(!ref){skipped++;continue}
-   const name=clean(r["Nome produto"])||`Produto REF. ${ref}`,brand=clean(r["Marca"]),cat=clean(r["Nome categoria"]);
-   const c=clean(r["Comprimento"]),w=clean(r["Largura"]),h=clean(r["Altura"]);
+   const ref=val(r,"Referência","Referencia");if(!ref){skipped++;continue}
+   const name=val(r,"Nome produto")||`Produto REF. ${ref}`,brand=val(r,"Marca"),cat=val(r,"Nome categoria");
+   const c=val(r,"Comprimento"),w=val(r,"Largura"),h=val(r,"Altura");
    const medidas=[c,w,h].filter(Boolean).join(" × ");
-   let grams=parseFloat(clean(r["Peso em gramas"]).replace(",", "."));let kg=Number.isFinite(grams)?grams/1000:null;
+   let grams=parseFloat(val(r,"Peso em gramas").replace(",", "."));let kg=Number.isFinite(grams)?grams/1000:null;
    const qr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=*`,{headers:H(secret,token)}),arr=await qr.json();let p=arr?.[0];
    if(!p){
     const body={referencia:ref,nome:name,descricao:name,categoria:cat||null,marca:brand||null,peso_kg:kg,medidas:medidas||null,origem:"misto",created_by:user.id,updated_by:user.id};
@@ -39,7 +51,7 @@ export default async req=>{
     const ur=await fetch(`${S}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers:{...H(secret,token),"content-type":"application/json"},body:JSON.stringify(patch)});
     if(!ur.ok){errors++;continue}updated++;
    }
-   const img=clean(r["Imagem principal"]);if(img){
+   const img=val(r,"Imagem principal");if(img){
     const er=await fetch(`${S}/rest/v1/product_images?product_id=eq.${p.id}&select=id&limit=1`,{headers:H(secret,token)}),ei=await er.json();
     if(!ei?.length){
      try{
