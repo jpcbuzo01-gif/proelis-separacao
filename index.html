@@ -1,242 +1,175 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis V6.4</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
-</style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V6.4</header><div class="w">
+-- PROELIS • Separação Inteligente V6.5
+-- Catálogo de Produtos
+-- Execute no Supabase > SQL Editor > New query
 
-<div id="loading" class="c">Carregando sistema...</div>
+create extension if not exists pgcrypto;
 
-<div id="login" class="c hide"><h2>Entrar</h2><p class="muted">Use seu login individual da Proelis.</p><label>E-mail</label><input id="email" type="email" autocomplete="username"><label>Senha</label><input id="password" type="password" autocomplete="current-password"><button id="loginBtn" class="full">ENTRAR</button><div id="loginMsg"></div></div>
+create table if not exists public.products (
+  id uuid primary key default gen_random_uuid(),
+  referencia text not null unique,
+  nome text not null,
+  descricao text,
+  categoria text,
+  subcategoria text,
+  marca text,
+  fabricante text,
+  modelo text,
+  codigo_fabricante text,
+  peso_kg numeric(12,4),
+  unidade_peso text default 'kg',
+  medidas text,
+  especificacoes jsonb not null default '{}'::jsonb,
+  observacoes_separacao text,
+  localizacao_estoque text,
+  url_origem text,
+  ativo boolean not null default true,
+  origem text not null default 'manual' check (origem in ('manual','site_proelis','misto')),
+  site_updated_at timestamptz,
+  last_sync_at timestamptz,
+  created_by uuid references auth.users(id) on delete set null,
+  updated_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
-<div id="app" class="hide">
- <div class="c top"><div><b id="hello"></b><div class="who" id="roleLabel"></div></div><button id="logout" class="secondary">SAIR</button></div>
- <div id="adminNav" class="nav hide"><button data-view="dashboard" class="active">Painel</button><button data-view="newOrder">Novo pedido</button><button data-view="users">Usuários</button><button data-view="metrics">Indicadores</button></div>
+create table if not exists public.product_images (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  storage_path text not null,
+  origem text not null default 'admin' check (origem in ('admin','site_proelis')),
+  url_origem text,
+  principal boolean not null default false,
+  ordem integer not null default 0,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
 
- <section id="dashboard" class="view">
-  <div id="stats" class="grid"></div>
-  <div class="c"><div class="top"><h2 id="ordersTitle">Pedidos</h2><button id="refresh" class="secondary">ATUALIZAR</button></div><div id="ordersList"></div></div>
- </section>
+create index if not exists idx_products_referencia on public.products(referencia);
+create index if not exists idx_products_nome on public.products(nome);
+create index if not exists idx_products_marca on public.products(marca);
+create index if not exists idx_products_ativo on public.products(ativo);
+create index if not exists idx_product_images_product on public.product_images(product_id, ordem);
 
- <section id="newOrder" class="view hide">
-  <div id="orderImport" class="c"><h2>Novo pedido</h2><p class="muted">Fotografe ou selecione a Separação de Mercadoria.</p><input id="orderPhoto" type="file" accept="image/*" capture="environment"><img id="orderPreview" class="hide"><button id="readOrder" class="full">LER PEDIDO</button><div id="orderResult"></div></div>
-  <div id="orderConfirm" class="c hide"><h2>Confirmar e atribuir pedido</h2><div class="meta"><div><small>Venda</small><br><b id="sale"></b></div><div><small>Data</small><br><b id="date"></b></div></div><p><small>Cliente</small><br><b id="client"></b></p><label>Separador responsável</label><select id="assignee"></select><div style="overflow:auto"><table><thead><tr><th>Qtde</th><th>Ref.</th><th>Descrição</th><th></th></tr></thead><tbody id="orderRows"></tbody></table></div><button id="saveOrder" class="full">SALVAR E ATRIBUIR PEDIDO</button><button id="backOrder" class="secondary full">TROCAR FOTO</button><div id="saveMsg"></div></div>
- </section>
+create or replace function public.touch_products_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  new.updated_by = auth.uid();
+  return new;
+end;
+$$;
 
- <section id="users" class="view hide"><div class="c">
-<div class="top"><div><h2>Usuários</h2><p class="muted">Crie e gerencie os acessos da equipe.</p></div><button id="newUserBtn">+ NOVO USUÁRIO</button></div>
-<div id="newUserForm" class="hide" style="margin-top:16px"><div class="grid">
-<label>Nome<input id="newUserName" placeholder="Nome do funcionário"></label>
-<label>E-mail<input id="newUserEmail" type="email" placeholder="usuario@proelis.com.br"></label>
-<label>Senha inicial<input id="newUserPassword" type="password" placeholder="Mínimo 8 caracteres"></label>
-<label>Perfil<select id="newUserRole"><option value="separador">Separador</option><option value="admin">Administrador</option></select></label>
-</div><div style="margin-top:12px"><button id="createUserBtn">CRIAR USUÁRIO</button> <button id="cancelUserBtn" class="secondary">CANCELAR</button></div><div id="newUserMsg" class="small" style="margin-top:10px"></div></div>
-<div id="usersList" style="margin-top:16px"></div></div></section>
- 
-<section id="metrics" class="view hide">
-  <div class="c">
-    <div class="top">
-      <div>
-        <h2>Indicadores de conferência</h2>
-        <p class="muted">Reprovações contam como erros evitados. Inconclusivos ficam separados e não entram na taxa de erro.</p>
-      </div>
-      <button id="refreshMetrics" class="secondary">ATUALIZAR</button>
-    </div>
-    <div id="metricsSummary" class="grid" style="margin-top:12px"></div>
-  </div>
-  <div class="c">
-    <h2>Por funcionário</h2>
-    <div id="metricsUsers"></div>
-  </div>
-  <div id="metricsDetail" class="c hide"></div>
-</section>
-<section id="history" class="view hide">
-   <div class="c top">
-     <div><h2 id="historyTitle">Histórico do pedido</h2><div class="who" id="historyMeta"></div></div>
-     <button id="backHistory" class="secondary">VOLTAR</button>
-   </div>
-   <div id="historyList" class="c"></div>
- </section>
+drop trigger if exists trg_products_updated_at on public.products;
+create trigger trg_products_updated_at
+before update on public.products
+for each row execute function public.touch_products_updated_at();
 
- <section id="picking" class="view hide">
-  <div class="c top"><div><b id="pickOrder"></b><div class="who" id="pickClient"></div></div><button id="backDash" class="secondary">VOLTAR</button></div>
-  <div id="itemCard" class="c"><b id="step"></b><div class="bar"><i id="prog"></i></div><p class="muted">Separe somente este item.</p><div class="ref" id="ref"></div><h2 id="desc"></h2><p>Marca: <b id="brand"></b> • Modelo: <b id="model"></b></p><div class="qty" id="qty"></div></div>
-  <div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide"><button id="verify" class="full">ANALISAR FOTO</button><div id="result"></div><p class="muted">O sistema só avança após confirmação visual do item e da quantidade.</p></div>
- </section>
-</div></div>
-<script>
-const SUPABASE_URL='https://mbxmhojgoqzqfxzajafb.supabase.co';
-const SUPABASE_KEY='sb_publishable_6YxdvuPcirHBODEEylOUsQ_xsehFq_d';
-const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-let session=null,profile=null,orderData=null,items=[],i=0,itemConfirmed=0,currentOrder=null;
-function show(id){document.querySelectorAll('.view').forEach(x=>x.classList.add('hide'));$(id).classList.remove('hide');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id))}
-function statusLabel(s){return ({aguardando:'Aguardando',em_separacao:'Em separação',concluido:'Concluído',cancelado:'Cancelado'})[s]||s}
-function dateISO(v){if(!v)return null;const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?`${m[3]}-${m[2]}-${m[1]}`:(/^\d{4}-\d{2}-\d{2}$/.test(v)?v:null)}
-async function compress(file,max=1600,q=.82){const url=URL.createObjectURL(file),img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src=url});const scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);return await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error('Falha ao preparar imagem')),'image/jpeg',q))}
-function infer(desc){const u=(desc||'').toUpperCase();const brand=u.includes('HCH')?'HCH':u.includes('N.S.K')||u.includes('NSK')?'NSK':'';const m=u.match(/\b(60\d{2}|62\d{2}|63\d{2}|6\d{2})\b/);return {brand,model:m?m[1]:''}}
-async function boot(){const {data:{session:s}}=await db.auth.getSession();session=s;if(!s){$('loading').classList.add('hide');$('login').classList.remove('hide');return}await enterApp()}
-async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;if(profile.ativo===false){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Seu usuário está desativado. Procure um administrador.</div>';return}$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
-$('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
-async function loadDashboard(){let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});const {data,error}=await q;if(error){$('ordersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}const rows=data||[];const counts={aguardando:0,em_separacao:0,concluido:0};rows.forEach(o=>{if(counts[o.status]!=null)counts[o.status]++});$('stats').innerHTML=`<div class="stat"><small>Aguardando</small><br><b>${counts.aguardando}</b></div><div class="stat"><small>Em separação</small><br><b>${counts.em_separacao}</b></div><div class="stat"><small>Concluídos</small><br><b>${counts.concluido}</b></div>`;$('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div>${esc(o.cliente||'Cliente não informado')}</div><div class="who">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div></div><span class="pill">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado.</p>';document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history))}
+-- Apenas uma foto principal por produto.
+create unique index if not exists ux_product_one_main_image
+on public.product_images(product_id)
+where principal = true;
 
+alter table public.products enable row level security;
+alter table public.product_images enable row level security;
 
-function errorKind(a){
-  const raw=(a?.ai_response?.error_type||a?.ai_response?.errorType||'').toString().trim().toLowerCase();
-  const map={
-    'produto':'Produto','product':'Produto','produto_errado':'Produto','wrong_product':'Produto',
-    'modelo':'Modelo/código','model':'Modelo/código','codigo':'Modelo/código','código':'Modelo/código',
-    'modelo_codigo':'Modelo/código','modelo/codigo':'Modelo/código','modelo/código':'Modelo/código','wrong_model':'Modelo/código',
-    'marca':'Marca','brand':'Marca','wrong_brand':'Marca',
-    'quantidade':'Quantidade','quantity':'Quantidade','wrong_quantity':'Quantidade'
-  };
-  if(map[raw])return map[raw];
-  // Compatibilidade apenas com tentativas antigas, gravadas antes da V6.3.
-  const t=((a.motivo||'')+'').toUpperCase();
-  if(/MODELO|C[ÓO]DIGO|REFER[ÊE]NCIA/.test(t))return 'Modelo/código';
-  if(/MARCA/.test(t))return 'Marca';
-  if(/QUANTIDADE|CONTAGEM|UNIDADES?/.test(t))return 'Quantidade';
-  return 'Produto';
-}
-async function loadMetrics(){
-  if(profile.role!=='admin')return;
-  $('metricsSummary').innerHTML='<div class="muted">Carregando indicadores...</div>';
-  $('metricsUsers').innerHTML='';
-  $('metricsDetail').classList.add('hide');
-  const {data:ats,error}=await db.from('verification_attempts').select('*').order('created_at',{ascending:false});
-  if(error){$('metricsSummary').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}
-  const attempts=ats||[];
-  const ids=[...new Set(attempts.map(a=>a.user_id).filter(Boolean))];
-  let users={};
-  if(ids.length){
-    const {data:ps}=await db.from('profiles').select('id,nome').in('id',ids);
-    (ps||[]).forEach(u=>users[u.id]=u.nome);
-  }
-  const approved=attempts.filter(a=>a.resultado==='aprovado').length;
-  const rejected=attempts.filter(a=>a.resultado==='reprovado').length;
-  const inconclusive=attempts.filter(a=>a.resultado==='inconclusivo').length;
-  const decisive=approved+rejected;
-  const rate=decisive?rejected/decisive*100:0;
-  $('metricsSummary').innerHTML=`
-    <div class="stat"><small>Tentativas</small><br><b>${attempts.length}</b></div>
-    <div class="stat"><small>Erros evitados</small><br><b>${rejected}</b></div>
-    <div class="stat"><small>Inconclusivos</small><br><b>${inconclusive}</b></div>
-    <div class="stat"><small>Taxa de erro*</small><br><b>${rate.toFixed(1)}%</b></div>
-    <div class="stat"><small>Aprovados</small><br><b>${approved}</b></div>
-    <div class="stat"><small>Conferências decisivas</small><br><b>${decisive}</b></div>`;
-  const grouped={};
-  attempts.forEach(a=>{
-    const id=a.user_id||'sem_usuario';
-    if(!grouped[id])grouped[id]={id,nome:users[id]||'Usuário',approved:0,rejected:0,inconclusive:0,total:0,attempts:[]};
-    const g=grouped[id];g.total++;g.attempts.push(a);
-    if(a.resultado==='aprovado')g.approved++;
-    else if(a.resultado==='reprovado')g.rejected++;
-    else g.inconclusive++;
-  });
-  const rows=Object.values(grouped).sort((a,b)=>a.nome.localeCompare(b.nome));
-  $('metricsUsers').innerHTML=rows.length?`<div style="overflow:auto"><table>
-    <thead><tr><th>Funcionário</th><th>Tentativas</th><th>Aprovados</th><th>Erros evitados</th><th>Inconclusivos</th><th>Taxa de erro*</th><th></th></tr></thead>
-    <tbody>${rows.map(g=>{const d=g.approved+g.rejected,rt=d?g.rejected/d*100:0;return `<tr>
-      <td><b>${esc(g.nome)}</b></td><td>${g.total}</td><td>${g.approved}</td><td>${g.rejected}</td><td>${g.inconclusive}</td><td>${rt.toFixed(1)}%</td>
-      <td><button class="secondary" style="padding:8px;margin:0" data-metric-user="${esc(g.id)}">VER DETALHES</button></td></tr>`}).join('')}</tbody></table></div>
-    <p class="small muted">* Taxa de erro = reprovações ÷ (aprovações + reprovações). Inconclusivos não contam como erro.</p>`:'<p class="muted">Ainda não há conferências registradas.</p>';
-  document.querySelectorAll('[data-metric-user]').forEach(b=>b.onclick=()=>showMetricUser(b.dataset.metricUser,grouped[b.dataset.metricUser],users));
-}
-async function showMetricUser(uid,g,users){
-  if(!g)return;
-  const rejected=g.attempts.filter(a=>a.resultado==='reprovado');
-  const kinds={Produto:0,'Modelo/código':0,Marca:0,Quantidade:0};
-  rejected.forEach(a=>kinds[errorKind(a)]++);
-  const itemIds=[...new Set(g.attempts.map(a=>a.item_id).filter(Boolean))];
-  let itemMap={};
-  if(itemIds.length){
-    const {data:its}=await db.from('order_items').select('id,referencia,descricao').in('id',itemIds);
-    (its||[]).forEach(x=>itemMap[x.id]=x);
-  }
-  const orderIds=[...new Set(g.attempts.map(a=>a.order_id).filter(Boolean))];
-  let orderMap={};
-  if(orderIds.length){
-    const {data:os}=await db.from('orders').select('id,numero_venda').in('id',orderIds);
-    (os||[]).forEach(x=>orderMap[x.id]=x.numero_venda);
-  }
-  const detail=g.attempts.map(a=>{
-    const x=itemMap[a.item_id]||{},when=a.created_at?new Date(a.created_at).toLocaleString('pt-BR'):'—';
-    const cls=a.resultado==='aprovado'?'ok':a.resultado==='reprovado'?'bad':'inc';
-    return `<div class="${cls}" style="margin-bottom:9px"><b>Venda ${esc(orderMap[a.order_id]||'—')} • REF. ${esc(x.referencia||'—')}</b>
-      <span class="pill" style="float:right">${esc((a.resultado||'').toUpperCase())}</span><br>
-      <span class="small">${esc(when)} • ${esc(x.descricao||'')}</span><br>
-      ${a.resultado==='reprovado'?`<b>Tipo:</b> ${esc(errorKind(a))}<br>`:''}<b>Motivo:</b> ${esc(a.motivo||'—')}</div>`;
-  }).join('');
-  $('metricsDetail').innerHTML=`<div class="top"><div><h2>${esc(g.nome)}</h2><div class="muted">Detalhamento das conferências</div></div><button id="closeMetric" class="secondary">FECHAR</button></div>
-    <div class="grid" style="margin-top:12px">
-      <div class="stat"><small>Produto</small><br><b>${kinds.Produto}</b></div>
-      <div class="stat"><small>Modelo/código</small><br><b>${kinds['Modelo/código']}</b></div>
-      <div class="stat"><small>Marca</small><br><b>${kinds.Marca}</b></div>
-      <div class="stat"><small>Quantidade</small><br><b>${kinds.Quantidade}</b></div>
-    </div><h3>Tentativas</h3>${detail||'<p class="muted">Sem tentativas.</p>'}`;
-  $('metricsDetail').classList.remove('hide');
-  $('closeMetric').onclick=()=>$('metricsDetail').classList.add('hide');
-  $('metricsDetail').scrollIntoView({behavior:'smooth',block:'start'});
-}
+drop policy if exists "catalog authenticated read" on public.products;
+create policy "catalog authenticated read"
+on public.products for select
+to authenticated
+using (true);
 
-async function openHistory(orderId){
-  if(profile.role!=='admin')return;
-  const {data:o,error:oe}=await db.from('orders').select('*').eq('id',orderId).single();
-  if(oe)return alert(oe.message);
-  const {data:its,error:ie}=await db.from('order_items').select('*').eq('order_id',orderId).order('ordem');
-  if(ie)return alert(ie.message);
-  const {data:ats,error:ae}=await db.from('verification_attempts').select('*').eq('order_id',orderId).order('created_at',{ascending:true});
-  if(ae)return alert(ae.message);
-  const userIds=[...new Set((ats||[]).map(a=>a.user_id).filter(Boolean))];
-  let userMap={};
-  if(userIds.length){
-    const {data:us}=await db.from('profiles').select('id,nome').in('id',userIds);
-    (us||[]).forEach(u=>userMap[u.id]=u.nome);
-  }
-  const itemMap={};(its||[]).forEach(x=>itemMap[x.id]=x);
-  $('historyTitle').textContent='Venda '+o.numero_venda+' — Histórico';
-  $('historyMeta').textContent=(o.cliente||'')+' • '+statusLabel(o.status);
-  if(!(ats||[]).length){
-    $('historyList').innerHTML='<p class="muted">Ainda não há tentativas de conferência neste pedido.</p>';
-    show('history');return;
-  }
-  const cards=[];
-  for(const a of ats){
-    const x=itemMap[a.item_id]||{};
-    let photo='';
-    if(a.foto_path){
-      const {data:signed}=await db.storage.from('verification-photos').createSignedUrl(a.foto_path,3600);
-      if(signed?.signedUrl)photo=`<img src="${esc(signed.signedUrl)}" alt="Foto da conferência">`;
-    }
-    const cls=a.resultado==='aprovado'?'ok':a.resultado==='reprovado'?'bad':'inc';
-    const when=a.created_at?new Date(a.created_at).toLocaleString('pt-BR'):'—';
-    cards.push(`<div class="${cls}" style="margin-bottom:12px">
-      <div class="top"><b>REF. ${esc(x.referencia||'—')} — ${esc(x.descricao||'')}</b><span class="pill">${esc((a.resultado||'').toUpperCase())}</span></div>
-      <div class="small">${esc(userMap[a.user_id]||'Usuário')} • ${esc(when)}</div>
-      <div style="margin-top:8px"><b>Lote esperado:</b> ${esc(a.quantidade_lote??'—')} • <b>Identificado:</b> ${esc(a.quantidade_identificada??'—')}</div>
-      <div><b>Marca/modelo identificado:</b> ${esc(a.marca_identificada||'—')} ${esc(a.modelo_identificado||'—')}</div>
-      <div><b>Motivo:</b> ${esc(a.motivo||'—')}</div>${photo}
-    </div>`);
-  }
-  $('historyList').innerHTML=cards.join('');
-  show('history');
-}
+drop policy if exists "catalog admin insert" on public.products;
+create policy "catalog admin insert"
+on public.products for insert
+to authenticated
+with check (public.is_admin());
 
-async function loadSeparators(){const {data}=await db.from('profiles').select('id,nome,role,ativo').eq('role','separador').eq('ativo',true).order('nome');$('assignee').innerHTML=(data||[]).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('')||'<option value="">Nenhum separador cadastrado</option>'}
-async function createManagedUser(){const nome=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;if(!nome||!email||password.length<8){$('newUserMsg').textContent='Preencha nome, e-mail e uma senha inicial com pelo menos 8 caracteres.';return}$('createUserBtn').disabled=true;$('newUserMsg').textContent='Criando usuário...';try{const {data:{session:current}}=await db.auth.getSession();if(!current)throw new Error('Sessão expirada. Entre novamente.');const r=await fetch('/.netlify/functions/manage-user',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+current.access_token},body:JSON.stringify({action:'create',nome,email,password,role})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha ao criar usuário.');$('newUserMsg').textContent='Usuário criado com sucesso.';$('newUserName').value='';$('newUserEmail').value='';$('newUserPassword').value='';$('newUserForm').classList.add('hide');await loadUsers()}catch(e){$('newUserMsg').textContent=e.message}finally{$('createUserBtn').disabled=false}}
-async function toggleUser(id,isActive){const action=isActive?'desativar':'ativar';if(!confirm(`${action[0].toUpperCase()+action.slice(1)} este usuário?`))return;const {error}=await db.from('profiles').update({ativo:!isActive}).eq('id',id);if(error)return alert(error.message);await loadUsers()}
-async function loadUsers(){const {data,error}=await db.from('profiles').select('id,nome,role,ativo,created_at').order('nome');if(error){$('usersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}$('usersList').innerHTML=(data||[]).map(u=>`<div class="item"><div class="top"><div><b>${esc(u.nome)}</b><div class="small">${u.role==='admin'?'Administrador':'Separador'} • ${u.ativo?'Ativo':'Desativado'}</div></div>${u.id!==session.user.id?`<button class="secondary" data-toggle-user="${u.id}" data-active="${u.ativo?'1':'0'}">${u.ativo?'DESATIVAR':'ATIVAR'}</button>`:'<span class="pill">VOCÊ</span>'}</div></div>`).join('')||'<p class="muted">Nenhum usuário.</p>';document.querySelectorAll('[data-toggle-user]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.toggleUser,b.dataset.active==='1'))}
-async function quickAssign(orderId){await loadSeparators();const opts=[...$('assignee').options].map(o=>`${o.value}|${o.textContent}`).filter(x=>!x.startsWith('|'));if(!opts.length){alert('Cadastre primeiro um usuário Separador no Supabase Authentication.');return}const names=opts.map((x,n)=>`${n+1} - ${x.split('|')[1]}`).join('\n');const n=Number(prompt('Escolha o separador:\n'+names));if(!n||n<1||n>opts.length)return;const uid=opts[n-1].split('|')[0];const {error}=await db.from('orders').update({assigned_to:uid}).eq('id',orderId);if(error)alert(error.message);else loadDashboard()}
-$('orderPhoto').onchange=e=>{const f=e.target.files[0];if(f){$('orderPreview').src=URL.createObjectURL(f);$('orderPreview').classList.remove('hide')}};
-$('readOrder').onclick=async()=>{const file=$('orderPhoto').files[0];if(!file){$('orderResult').innerHTML='<div class="inc">Tire ou selecione a foto do pedido.</div>';return}$('readOrder').disabled=true;$('readOrder').textContent='LENDO PEDIDO...';$('orderResult').innerHTML='';try{const blob=await compress(file),fd=new FormData();fd.append('photo',blob,'pedido.jpg');const resp=await fetch('/.netlify/functions/read-order',{method:'POST',body:fd});const raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);if(!Array.isArray(d.items)||!d.items.length)throw new Error('Nenhum item foi reconhecido.');orderData=d;$('sale').textContent=d.sale_number||'—';$('date').textContent=d.date||'—';$('client').textContent=d.client||'—';$('orderRows').innerHTML=d.items.map((x,n)=>`<tr><td><input class="q" type="number" min="1" value="${Number(x.qty)||1}" style="width:75px"></td><td><input class="r" value="${esc(x.ref||'')}" style="width:90px"></td><td><input class="d" value="${esc(x.description||'')}"></td><td><button class="secondary del" type="button" style="padding:8px;margin:0">×</button></td></tr>`).join('');document.querySelectorAll('.del').forEach(b=>b.onclick=()=>b.closest('tr').remove());$('orderImport').classList.add('hide');$('orderConfirm').classList.remove('hide');await loadSeparators()}catch(e){$('orderResult').innerHTML=`<div class="err"><h3>ERRO NA LEITURA</h3>${esc(e.message||e)}</div>`}finally{$('readOrder').disabled=false;$('readOrder').textContent='LER PEDIDO'}};
-$('backOrder').onclick=()=>{$('orderConfirm').classList.add('hide');$('orderImport').classList.remove('hide')};
-$('saveOrder').onclick=async()=>{const assignee=$('assignee').value;if(!assignee){$('saveMsg').innerHTML='<div class="inc">Cadastre e selecione um separador.</div>';return}const rows=[...$('orderRows').querySelectorAll('tr')].map((tr,n)=>{const description=tr.querySelector('.d').value.trim(),inf=infer(description);return {quantidade:Number(tr.querySelector('.q').value),referencia:tr.querySelector('.r').value.trim(),descricao:description,marca:inf.brand,modelo:inf.model,ordem:n}}).filter(x=>x.referencia&&x.quantidade>0);if(!rows.length)return;$('saveOrder').disabled=true;$('saveMsg').innerHTML='';try{const {data:o,error:e1}=await db.from('orders').insert({numero_venda:orderData.sale_number||String(Date.now()),cliente:orderData.client||null,data_pedido:dateISO(orderData.date),assigned_to:assignee,created_by:session.user.id}).select().single();if(e1)throw e1;const {error:e2}=await db.from('order_items').insert(rows.map(x=>({...x,order_id:o.id})));if(e2){await db.from('orders').delete().eq('id',o.id);throw e2}await db.from('order_events').insert({order_id:o.id,user_id:session.user.id,tipo:'pedido_criado',descricao:'Pedido importado e atribuído pelo administrador.'});$('saveMsg').innerHTML='<div class="ok"><b>Pedido salvo e atribuído.</b></div>';setTimeout(()=>{orderData=null;$('orderRows').innerHTML='';$('orderPhoto').value='';$('orderPreview').classList.add('hide');$('orderConfirm').classList.add('hide');$('orderImport').classList.remove('hide');show('dashboard');loadDashboard()},900)}catch(e){$('saveMsg').innerHTML=`<div class="err">${esc(e.message||e)}</div>`}finally{$('saveOrder').disabled=false}};
-async function openOrder(orderId){const {data:o,error}=await db.from('orders').select('*').eq('id',orderId).single();if(error)return alert(error.message);const {data:its,error:e2}=await db.from('order_items').select('*').eq('order_id',orderId).order('ordem');if(e2)return alert(e2.message);currentOrder=o;items=its||[];if(!items.length)return alert('Pedido sem itens.');i=Math.max(0,items.findIndex(x=>x.status!=='aprovado'));if(i<0)i=0;itemConfirmed=items[i]?.quantidade_conferida||0;if(o.status==='aguardando'){await db.from('orders').update({status:'em_separacao',started_at:new Date().toISOString()}).eq('id',o.id);await db.from('order_events').insert({order_id:o.id,user_id:session.user.id,tipo:'separacao_iniciada',descricao:'Separação iniciada.'})}$('pickOrder').textContent='Venda '+o.numero_venda;$('pickClient').textContent=o.cliente||'';show('picking');renderPick()}
-function renderPick(){const x=items[i];if(!x)return;itemConfirmed=Math.max(0,Math.min(Number(x.quantidade_conferida)||0,x.quantidade));const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('step').textContent=`ITEM ${i+1} DE ${items.length}`;$('prog').style.width=(i/items.length*100)+'%';$('ref').textContent='REF. '+x.referencia;$('desc').textContent=x.descricao;$('brand').textContent=x.marca||'A confirmar';$('model').textContent=x.modelo||'A confirmar';$('qty').innerHTML=x.quantidade>10?`${itemConfirmed} DE ${x.quantidade} CONFERIDAS<br><span style="font-size:20px">LOTE ATUAL: ${batchQty} UNIDADES</span>`:`${x.quantidade}${x.quantidade===1?' UNIDADE':' UNIDADES'}`;$('result').innerHTML='';$('photo').value='';$('preview').classList.add('hide')}
-$('photo').onchange=e=>{const f=e.target.files[0];if(f){$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hide')}};
-$('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result').innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}const x=items[i],remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('verify').disabled=true;$('verify').textContent='ANALISANDO...';$('result').innerHTML='';try{const blob=await compress(file,1280,.78),fd=new FormData();fd.append('photo',blob,'photo.jpg');fd.append('ref',x.referencia);fd.append('qty',String(batchQty));fd.append('description',x.descricao||'');fd.append('brand',x.marca||'');fd.append('model',x.modelo||'');const resp=await fetch('/.netlify/functions/verify',{method:'POST',body:fd}),raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);const status=(d.status||'INCONCLUSIVO').toLowerCase(),dbStatus=status==='aprovado'?'aprovado':status==='reprovado'?'reprovado':'inconclusivo';const photoPath=`${session.user.id}/${currentOrder.id}/${x.id}/${Date.now()}-${dbStatus}.jpg`;const {error:upErr}=await db.storage.from('verification-photos').upload(photoPath,blob,{contentType:'image/jpeg',upsert:false});if(upErr)throw new Error('A análise foi concluída, mas a foto não pôde ser salva: '+upErr.message);const {error:attErr}=await db.from('verification_attempts').insert({order_id:currentOrder.id,item_id:x.id,user_id:session.user.id,quantidade_lote:batchQty,quantidade_identificada:Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null,resultado:dbStatus,modelo_identificado:d.identified_model||null,marca_identificada:d.identified_brand||null,motivo:d.reason||null,tipo_erro:d.error_type||null,ai_response:d,foto_path:photoPath});if(attErr){await db.storage.from('verification-photos').remove([photoPath]);throw attErr;}const cls=dbStatus==='aprovado'?'ok':dbStatus==='reprovado'?'bad':'inc',markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');$('result').innerHTML=`<div class="${cls}"><h3>${esc(d.status)}</h3><b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un. neste lote<br><b>Identificado:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade:</b> ${esc(d.identified_quantity??'—')}<br><b>Marcações:</b> ${esc(markings)}<br><br>${esc(d.reason||'')}</div>`;if(dbStatus==='aprovado')setTimeout(async()=>{itemConfirmed+=batchQty;const finished=itemConfirmed>=x.quantidade;await db.from('order_items').update({quantidade_conferida:itemConfirmed,status:finished?'aprovado':'em_conferencia'}).eq('id',x.id);x.quantidade_conferida=itemConfirmed;x.status=finished?'aprovado':'em_conferencia';if(!finished){renderPick();$('result').innerHTML=`<div class="ok"><b>Lote aprovado.</b> ${itemConfirmed} de ${x.quantidade} unidades conferidas. Separe o próximo lote.</div>`;return}i++;while(i<items.length&&items[i].status==='aprovado')i++;if(i<items.length){itemConfirmed=items[i].quantidade_conferida||0;renderPick()}else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:'Todos os itens foram aprovados.'});alert('PEDIDO CONFERIDO! Todos os itens foram aprovados.');show('dashboard');loadDashboard()}},900)}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
-if($('refreshMetrics'))$('refreshMetrics').onclick=loadMetrics;
-if($('newUserBtn'))$('newUserBtn').onclick=()=>{$('newUserForm').classList.remove('hide');$('newUserMsg').textContent=''};if($('cancelUserBtn'))$('cancelUserBtn').onclick=()=>$('newUserForm').classList.add('hide');if($('createUserBtn'))$('createUserBtn').onclick=createManagedUser;
-boot();
-</script></body></html>
+drop policy if exists "catalog admin update" on public.products;
+create policy "catalog admin update"
+on public.products for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "catalog admin delete" on public.products;
+create policy "catalog admin delete"
+on public.products for delete
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "catalog images authenticated read" on public.product_images;
+create policy "catalog images authenticated read"
+on public.product_images for select
+to authenticated
+using (true);
+
+drop policy if exists "catalog images admin insert" on public.product_images;
+create policy "catalog images admin insert"
+on public.product_images for insert
+to authenticated
+with check (public.is_admin());
+
+drop policy if exists "catalog images admin update" on public.product_images;
+create policy "catalog images admin update"
+on public.product_images for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "catalog images admin delete" on public.product_images;
+create policy "catalog images admin delete"
+on public.product_images for delete
+to authenticated
+using (public.is_admin());
+
+-- Bucket privado para cópias das fotos do catálogo.
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', false)
+on conflict (id) do update set public = false;
+
+drop policy if exists "product images authenticated read" on storage.objects;
+create policy "product images authenticated read"
+on storage.objects for select
+to authenticated
+using (bucket_id = 'product-images');
+
+drop policy if exists "product images admin insert" on storage.objects;
+create policy "product images admin insert"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'product-images' and public.is_admin());
+
+drop policy if exists "product images admin update" on storage.objects;
+create policy "product images admin update"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'product-images' and public.is_admin())
+with check (bucket_id = 'product-images' and public.is_admin());
+
+drop policy if exists "product images admin delete" on storage.objects;
+create policy "product images admin delete"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'product-images' and public.is_admin());
+
+-- Catálogo inicial já validado no projeto.
+insert into public.products
+(referencia,nome,descricao,categoria,marca,fabricante,modelo,medidas,observacoes_separacao,origem,url_origem)
+values
+('485','Rolamento HCH 6201 2RS DDU C3','Rolamento HCH 6201 2RS DDU C3','Rolamentos','HCH','HCH','6201','32 × 10 × 12 mm','Para HCH, 2RS é equivalente a DDU. ZZ não é equivalente.','misto','https://www.proelis.com.br/'),
+('486','Rolamento HCH 6202 2RS DDU C3','Rolamento HCH 6202 2RS DDU C3','Rolamentos','HCH','HCH','6202','35 × 11 × 15 mm','Para HCH, 2RS é equivalente a DDU. ZZ não é equivalente.','misto','https://www.proelis.com.br/')
+on conflict (referencia) do update set
+  nome = excluded.nome,
+  descricao = excluded.descricao,
+  categoria = excluded.categoria,
+  marca = excluded.marca,
+  fabricante = excluded.fabricante,
+  modelo = excluded.modelo,
+  medidas = excluded.medidas,
+  observacoes_separacao = excluded.observacoes_separacao;
+
+select referencia, nome, marca, modelo, medidas, ativo
+from public.products
+order by referencia;
