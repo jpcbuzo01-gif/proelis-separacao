@@ -4,7 +4,7 @@
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
 .catalog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.catalog-card{border:1px solid #e1e5e9;border-radius:13px;padding:13px;margin-top:10px}.catalog-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.catalog-photo{border:1px solid #dde2e7;border-radius:12px;padding:7px}.catalog-photo img{height:150px;object-fit:contain;margin:0}.reference-box{background:#f8fafb;border:1px solid #dfe5ea;border-radius:13px;padding:12px;margin-top:12px}.reference-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.reference-photos img{height:160px;object-fit:contain;background:white;border:1px solid #e1e5e9;margin:0}@media(max-width:620px){.catalog-grid,.catalog-photo-grid,.reference-photos{grid-template-columns:1fr}}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V8.0.2</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V8.0.3</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -111,6 +111,17 @@
     <div id="catalogReferencePhotos" class="reference-photos"></div>
   </div>
 </div>
+  <div id="stationPanel" class="c" style="border:3px solid #f6c400">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <h2 style="margin:0;flex:1">ESTAÇÃO INTELIGENTE</h2>
+      <button id="stationStart" type="button">INICIAR ESTAÇÃO</button>
+      <button id="stationStop" class="secondary hide" type="button">PARAR ESTAÇÃO</button>
+    </div>
+    <div id="stationState" style="margin-top:12px;padding:18px;border-radius:14px;background:#f3f4f6;font-size:20px;font-weight:900">MODO MANUAL</div>
+    <video id="stationVideo" class="hide" autoplay playsinline muted style="width:100%;max-height:420px;object-fit:contain;background:#111;border-radius:14px;margin-top:12px"></video>
+    <canvas id="stationCanvas" class="hide"></canvas>
+    <div id="stationSensors" class="small muted" style="margin-top:10px"></div>
+  </div>
   <div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide"><button id="verify" class="full">ANALISAR FOTO</button><div id="result"></div><p class="muted">O sistema só avança após as conferências obrigatórias do produto.</p></div>
 <div id="weightCard" class="c hide">
   <h3>Conferência por peso</h3>
@@ -137,12 +148,6 @@ function statusLabel(s){return ({aguardando:'Aguardando',em_separacao:'Em separa
 function dateISO(v){if(!v)return null;const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?`${m[3]}-${m[2]}-${m[1]}`:(/^\d{4}-\d{2}-\d{2}$/.test(v)?v:null)}
 async function compress(file,max=1600,q=.82){const url=URL.createObjectURL(file),img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src=url});const scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);return await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error('Falha ao preparar imagem')),'image/jpeg',q))}
 function infer(desc){const u=(desc||'').toUpperCase();const brand=u.includes('HCH')?'HCH':u.includes('N.S.K')||u.includes('NSK')?'NSK':'';const m=u.match(/\b(60\d{2}|62\d{2}|63\d{2}|6\d{2})\b/);return {brand,model:m?m[1]:''}}
-const stationObserver=new MutationObserver(()=>{
-  const pickVisible=document.getElementById('pick') && !document.getElementById('pick').classList.contains('hide');
-  if(pickVisible && !document.getElementById('stationPanel'))mountStationGuaranteed();
-});
-stationObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-
 async function boot(){const {data:{session:s}}=await db.auth.getSession();session=s;if(!s){$('loading').classList.add('hide');$('login').classList.remove('hide');return}await enterApp()}
 async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;if(profile.ativo===false){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Seu usuário está desativado. Procure um administrador.</div>';return}$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
 $('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
@@ -500,51 +505,6 @@ async function deleteProductPhoto(id,path,productId){
   await db.from('product_images').delete().eq('id',id);await loadProductPhotos(productId);
 }
 
-function ensureStationPanel(){
-  let panel=document.getElementById('stationPanel');
-  if(panel)return panel;
-
-  // Find the actual card containing "Foto dos itens separados", regardless of id/class/version.
-  const all=[...document.querySelectorAll('body *')];
-  let heading=all.find(el=>el.children.length===0 && (el.textContent||'').trim()==='Foto dos itens separados');
-  let photoContainer=heading;
-  while(photoContainer && photoContainer.parentElement && !photoContainer.querySelector('input[type="file"]')){
-    photoContainer=photoContainer.parentElement;
-  }
-  // Final fallback: locate the photo input itself and walk to its visual card.
-  if(!photoContainer){
-    const inp=document.getElementById('photo')||document.querySelector('input[type="file"][accept*="image"]');
-    photoContainer=inp;
-    while(photoContainer?.parentElement && !photoContainer.classList?.contains('c'))photoContainer=photoContainer.parentElement;
-  }
-  if(!photoContainer?.parentNode)return null;
-
-  panel=document.createElement('div');
-  panel.id='stationPanel';panel.className='c';
-  panel.style.border='3px solid #f6c400';
-  panel.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <h2 style="margin:0;flex:1">ESTAÇÃO INTELIGENTE</h2>
-    <button id="stationStart" type="button">INICIAR ESTAÇÃO</button>
-    <button id="stationStop" class="secondary hide" type="button">PARAR ESTAÇÃO</button>
-  </div>
-  <div id="stationState" style="margin-top:12px;padding:18px;border-radius:14px;background:#f3f4f6;font-size:20px;font-weight:900">MODO MANUAL</div>
-  <video id="stationVideo" class="hide" autoplay playsinline muted style="width:100%;max-height:420px;object-fit:contain;background:#111;border-radius:14px;margin-top:12px"></video>
-  <canvas id="stationCanvas" class="hide"></canvas>
-  <div id="stationSensors" class="small muted" style="margin-top:10px"></div>`;
-  photoContainer.parentNode.insertBefore(panel,photoContainer);
-  document.getElementById('stationStart').onclick=startStation;
-  document.getElementById('stationStop').onclick=stopStation;
-  return panel;
-}
-function mountStationGuaranteed(){
-  let tries=0;
-  const timer=setInterval(()=>{
-    tries++;
-    const p=ensureStationPanel();
-    if(p||tries>=40)clearInterval(timer);
-  },100);
-}
-
 let currentPickProduct=null, visualApproved=false, weightApproved=false, scalePort=null, scaleReader=null;
 let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null};
 function setStationState(text,kind='wait'){
@@ -683,6 +643,8 @@ async function openOrder(orderId){const {data:o,error}=await db.from('orders').s
 function renderPick(){const x=items[i];if(!x)return;itemConfirmed=Math.max(0,Math.min(Number(x.quantidade_conferida)||0,x.quantidade));const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('step').textContent=`ITEM ${i+1} DE ${items.length}`;$('prog').style.width=(i/items.length*100)+'%';$('ref').textContent='REF. '+x.referencia;$('desc').textContent=x.descricao;$('brand').textContent=x.marca||'A confirmar';$('model').textContent=x.modelo||'A confirmar';$('qty').innerHTML=x.quantidade>10?`${itemConfirmed} DE ${x.quantidade} CONFERIDAS<br><span style="font-size:20px">LOTE ATUAL: ${batchQty} UNIDADES</span>`:`${x.quantidade}${x.quantidade===1?' UNIDADE':' UNIDADES'}`;$('result').innerHTML='';$('photo').value='';$('preview').classList.add('hide');loadReferenceForPick(x.referencia).then(p=>showWeightForPick(p,batchQty))}
 $('photo').onchange=e=>{const f=e.target.files[0];if(f){$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hide')}};
 $('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result').innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}const x=items[i],remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('verify').disabled=true;$('verify').textContent='ANALISANDO...';$('result').innerHTML='';try{const blob=await compress(file,1280,.78),fd=new FormData();fd.append('photo',blob,'photo.jpg');fd.append('ref',x.referencia);fd.append('qty',String(batchQty));fd.append('description',x.descricao||'');fd.append('brand',x.marca||'');fd.append('model',x.modelo||'');const resp=await fetch('/.netlify/functions/verify',{method:'POST',body:fd}),raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);const status=(d.status||'INCONCLUSIVO').toLowerCase(),dbStatus=status==='aprovado'?'aprovado':status==='reprovado'?'reprovado':'inconclusivo';const photoPath=`${session.user.id}/${currentOrder.id}/${x.id}/${Date.now()}-${dbStatus}.jpg`;const {error:upErr}=await db.storage.from('verification-photos').upload(photoPath,blob,{contentType:'image/jpeg',upsert:false});if(upErr)throw new Error('A análise foi concluída, mas a foto não pôde ser salva: '+upErr.message);const {error:attErr}=await db.from('verification_attempts').insert({order_id:currentOrder.id,item_id:x.id,user_id:session.user.id,quantidade_lote:batchQty,quantidade_identificada:Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null,resultado:dbStatus,modelo_identificado:d.identified_model||null,marca_identificada:d.identified_brand||null,motivo:d.reason||null,tipo_erro:d.error_type||null,ai_response:d,foto_path:photoPath});if(attErr){await db.storage.from('verification-photos').remove([photoPath]);throw attErr;}const cls=dbStatus==='aprovado'?'ok':dbStatus==='reprovado'?'bad':'inc',markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');$('result').innerHTML=`<div class="${cls}"><h3>${esc(d.status)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial do catálogo usada como referência visual</b></div><br>':''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un. neste lote<br><b>Identificado:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade:</b> ${esc(d.identified_quantity??'—')}<br><b>Marcações:</b> ${esc(markings)}<br><br>${esc(d.reason||'')}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
+if($('stationStart'))$('stationStart').onclick=startStation;
+if($('stationStop'))$('stationStop').onclick=stopStation;
 if($('connectScale'))$('connectScale').onclick=async()=>{try{await readScaleSerial()}catch(e){$('weightResult').innerHTML=`<div class="err">${esc(e.message||e)}</div>`}};
 if($('weightReading'))$('weightReading').oninput=()=>{if(station.active&&$('weightMode').value==='simulacao'){const n=Number(String($('weightReading').value).replace(',','.'));if(Number.isFinite(n)){for(let k=0;k<4;k++)station.weights.push({g:n,t:Date.now()-k*200});feedStationWeight(n)}}};
 if($('weightMode'))$('weightMode').onchange=()=>{$('connectScale').style.display=$('weightMode').value==='serial'?'inline-block':'none'};
