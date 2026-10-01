@@ -31,8 +31,7 @@
   <div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide"><button id="verify" class="full">ANALISAR FOTO</button><div id="result"></div><p class="muted">O sistema só avança após confirmação visual do item e da quantidade.</p></div>
  </section>
 </div></div>
-<script>
-const SUPABASE_URL='https://mbxmhojgozqfxzajafb.supabase.co';
+<script>const SUPABASE_URL='https://mbxmhojgoqzqfxzajafb.supabase.co';
 const SUPABASE_KEY='sb_publishable_6YxdvuPcirHBODEEylOUsQ_xsehFq_d';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
