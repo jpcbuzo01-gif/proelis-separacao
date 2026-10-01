@@ -1,9 +1,9 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis V6.1</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis V6.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V6.1</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V6.2</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -11,7 +11,7 @@
 
 <div id="app" class="hide">
  <div class="c top"><div><b id="hello"></b><div class="who" id="roleLabel"></div></div><button id="logout" class="secondary">SAIR</button></div>
- <div id="adminNav" class="nav hide"><button data-view="dashboard" class="active">Painel</button><button data-view="newOrder">Novo pedido</button><button data-view="users">Usuários</button></div>
+ <div id="adminNav" class="nav hide"><button data-view="dashboard" class="active">Painel</button><button data-view="newOrder">Novo pedido</button><button data-view="users">Usuários</button><button data-view="metrics">Indicadores</button></div>
 
  <section id="dashboard" class="view">
   <div id="stats" class="grid"></div>
@@ -24,7 +24,25 @@
  </section>
 
  <section id="users" class="view hide"><div class="c"><h2>Usuários</h2><p class="muted">Usuários cadastrados no sistema e seus perfis.</p><div id="usersList"></div><p class="small muted">Nesta etapa, novos logins são criados pelo Authentication do Supabase. O painel já permite atribuir pedidos aos separadores cadastrados.</p></div></section>
- <section id="history" class="view hide">
+ 
+<section id="metrics" class="view hide">
+  <div class="c">
+    <div class="top">
+      <div>
+        <h2>Indicadores de conferência</h2>
+        <p class="muted">Reprovações contam como erros evitados. Inconclusivos ficam separados e não entram na taxa de erro.</p>
+      </div>
+      <button id="refreshMetrics" class="secondary">ATUALIZAR</button>
+    </div>
+    <div id="metricsSummary" class="grid" style="margin-top:12px"></div>
+  </div>
+  <div class="c">
+    <h2>Por funcionário</h2>
+    <div id="metricsUsers"></div>
+  </div>
+  <div id="metricsDetail" class="c hide"></div>
+</section>
+<section id="history" class="view hide">
    <div class="c top">
      <div><h2 id="historyTitle">Histórico do pedido</h2><div class="who" id="historyMeta"></div></div>
      <button id="backHistory" class="secondary">VOLTAR</button>
@@ -52,8 +70,97 @@ function infer(desc){const u=(desc||'').toUpperCase();const brand=u.includes('HC
 async function boot(){const {data:{session:s}}=await db.auth.getSession();session=s;if(!s){$('loading').classList.add('hide');$('login').classList.remove('hide');return}await enterApp()}
 async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
 $('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
+$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
 async function loadDashboard(){let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});const {data,error}=await q;if(error){$('ordersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}const rows=data||[];const counts={aguardando:0,em_separacao:0,concluido:0};rows.forEach(o=>{if(counts[o.status]!=null)counts[o.status]++});$('stats').innerHTML=`<div class="stat"><small>Aguardando</small><br><b>${counts.aguardando}</b></div><div class="stat"><small>Em separação</small><br><b>${counts.em_separacao}</b></div><div class="stat"><small>Concluídos</small><br><b>${counts.concluido}</b></div>`;$('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div>${esc(o.cliente||'Cliente não informado')}</div><div class="who">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div></div><span class="pill">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado.</p>';document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history))}
+
+
+function errorKind(a){
+  const t=((a.motivo||'')+' '+(a.ai_response?JSON.stringify(a.ai_response):'')).toUpperCase();
+  if(/QUANT|UNIDADE|CONTAGEM|FALT|SOBR/.test(t))return 'Quantidade';
+  if(/MODELO|REFER|C[ÓO]DIGO|620|600|607|608|629/.test(t))return 'Modelo/código';
+  if(/MARCA|HCH|NSK|WEG|BOSCH|MAKITA/.test(t))return 'Marca';
+  return 'Produto';
+}
+async function loadMetrics(){
+  if(profile.role!=='admin')return;
+  $('metricsSummary').innerHTML='<div class="muted">Carregando indicadores...</div>';
+  $('metricsUsers').innerHTML='';
+  $('metricsDetail').classList.add('hide');
+  const {data:ats,error}=await db.from('verification_attempts').select('*').order('created_at',{ascending:false});
+  if(error){$('metricsSummary').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}
+  const attempts=ats||[];
+  const ids=[...new Set(attempts.map(a=>a.user_id).filter(Boolean))];
+  let users={};
+  if(ids.length){
+    const {data:ps}=await db.from('profiles').select('id,nome').in('id',ids);
+    (ps||[]).forEach(u=>users[u.id]=u.nome);
+  }
+  const approved=attempts.filter(a=>a.resultado==='aprovado').length;
+  const rejected=attempts.filter(a=>a.resultado==='reprovado').length;
+  const inconclusive=attempts.filter(a=>a.resultado==='inconclusivo').length;
+  const decisive=approved+rejected;
+  const rate=decisive?rejected/decisive*100:0;
+  $('metricsSummary').innerHTML=`
+    <div class="stat"><small>Tentativas</small><br><b>${attempts.length}</b></div>
+    <div class="stat"><small>Erros evitados</small><br><b>${rejected}</b></div>
+    <div class="stat"><small>Inconclusivos</small><br><b>${inconclusive}</b></div>
+    <div class="stat"><small>Taxa de erro*</small><br><b>${rate.toFixed(1)}%</b></div>
+    <div class="stat"><small>Aprovados</small><br><b>${approved}</b></div>
+    <div class="stat"><small>Conferências decisivas</small><br><b>${decisive}</b></div>`;
+  const grouped={};
+  attempts.forEach(a=>{
+    const id=a.user_id||'sem_usuario';
+    if(!grouped[id])grouped[id]={id,nome:users[id]||'Usuário',approved:0,rejected:0,inconclusive:0,total:0,attempts:[]};
+    const g=grouped[id];g.total++;g.attempts.push(a);
+    if(a.resultado==='aprovado')g.approved++;
+    else if(a.resultado==='reprovado')g.rejected++;
+    else g.inconclusive++;
+  });
+  const rows=Object.values(grouped).sort((a,b)=>a.nome.localeCompare(b.nome));
+  $('metricsUsers').innerHTML=rows.length?`<div style="overflow:auto"><table>
+    <thead><tr><th>Funcionário</th><th>Tentativas</th><th>Aprovados</th><th>Erros evitados</th><th>Inconclusivos</th><th>Taxa de erro*</th><th></th></tr></thead>
+    <tbody>${rows.map(g=>{const d=g.approved+g.rejected,rt=d?g.rejected/d*100:0;return `<tr>
+      <td><b>${esc(g.nome)}</b></td><td>${g.total}</td><td>${g.approved}</td><td>${g.rejected}</td><td>${g.inconclusive}</td><td>${rt.toFixed(1)}%</td>
+      <td><button class="secondary" style="padding:8px;margin:0" data-metric-user="${esc(g.id)}">VER DETALHES</button></td></tr>`}).join('')}</tbody></table></div>
+    <p class="small muted">* Taxa de erro = reprovações ÷ (aprovações + reprovações). Inconclusivos não contam como erro.</p>`:'<p class="muted">Ainda não há conferências registradas.</p>';
+  document.querySelectorAll('[data-metric-user]').forEach(b=>b.onclick=()=>showMetricUser(b.dataset.metricUser,grouped[b.dataset.metricUser],users));
+}
+async function showMetricUser(uid,g,users){
+  if(!g)return;
+  const rejected=g.attempts.filter(a=>a.resultado==='reprovado');
+  const kinds={Produto:0,'Modelo/código':0,Marca:0,Quantidade:0};
+  rejected.forEach(a=>kinds[errorKind(a)]++);
+  const itemIds=[...new Set(g.attempts.map(a=>a.item_id).filter(Boolean))];
+  let itemMap={};
+  if(itemIds.length){
+    const {data:its}=await db.from('order_items').select('id,referencia,descricao').in('id',itemIds);
+    (its||[]).forEach(x=>itemMap[x.id]=x);
+  }
+  const orderIds=[...new Set(g.attempts.map(a=>a.order_id).filter(Boolean))];
+  let orderMap={};
+  if(orderIds.length){
+    const {data:os}=await db.from('orders').select('id,numero_venda').in('id',orderIds);
+    (os||[]).forEach(x=>orderMap[x.id]=x.numero_venda);
+  }
+  const detail=g.attempts.map(a=>{
+    const x=itemMap[a.item_id]||{},when=a.created_at?new Date(a.created_at).toLocaleString('pt-BR'):'—';
+    const cls=a.resultado==='aprovado'?'ok':a.resultado==='reprovado'?'bad':'inc';
+    return `<div class="${cls}" style="margin-bottom:9px"><b>Venda ${esc(orderMap[a.order_id]||'—')} • REF. ${esc(x.referencia||'—')}</b>
+      <span class="pill" style="float:right">${esc((a.resultado||'').toUpperCase())}</span><br>
+      <span class="small">${esc(when)} • ${esc(x.descricao||'')}</span><br>
+      ${a.resultado==='reprovado'?`<b>Tipo:</b> ${esc(errorKind(a))}<br>`:''}<b>Motivo:</b> ${esc(a.motivo||'—')}</div>`;
+  }).join('');
+  $('metricsDetail').innerHTML=`<div class="top"><div><h2>${esc(g.nome)}</h2><div class="muted">Detalhamento das conferências</div></div><button id="closeMetric" class="secondary">FECHAR</button></div>
+    <div class="grid" style="margin-top:12px">
+      <div class="stat"><small>Produto</small><br><b>${kinds.Produto}</b></div>
+      <div class="stat"><small>Modelo/código</small><br><b>${kinds['Modelo/código']}</b></div>
+      <div class="stat"><small>Marca</small><br><b>${kinds.Marca}</b></div>
+      <div class="stat"><small>Quantidade</small><br><b>${kinds.Quantidade}</b></div>
+    </div><h3>Tentativas</h3>${detail||'<p class="muted">Sem tentativas.</p>'}`;
+  $('metricsDetail').classList.remove('hide');
+  $('closeMetric').onclick=()=>$('metricsDetail').classList.add('hide');
+  $('metricsDetail').scrollIntoView({behavior:'smooth',block:'start'});
+}
 
 async function openHistory(orderId){
   if(profile.role!=='admin')return;
@@ -109,5 +216,6 @@ async function openOrder(orderId){const {data:o,error}=await db.from('orders').s
 function renderPick(){const x=items[i];if(!x)return;itemConfirmed=Math.max(0,Math.min(Number(x.quantidade_conferida)||0,x.quantidade));const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('step').textContent=`ITEM ${i+1} DE ${items.length}`;$('prog').style.width=(i/items.length*100)+'%';$('ref').textContent='REF. '+x.referencia;$('desc').textContent=x.descricao;$('brand').textContent=x.marca||'A confirmar';$('model').textContent=x.modelo||'A confirmar';$('qty').innerHTML=x.quantidade>10?`${itemConfirmed} DE ${x.quantidade} CONFERIDAS<br><span style="font-size:20px">LOTE ATUAL: ${batchQty} UNIDADES</span>`:`${x.quantidade}${x.quantidade===1?' UNIDADE':' UNIDADES'}`;$('result').innerHTML='';$('photo').value='';$('preview').classList.add('hide')}
 $('photo').onchange=e=>{const f=e.target.files[0];if(f){$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hide')}};
 $('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result').innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}const x=items[i],remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining);$('verify').disabled=true;$('verify').textContent='ANALISANDO...';$('result').innerHTML='';try{const blob=await compress(file,1280,.78),fd=new FormData();fd.append('photo',blob,'photo.jpg');fd.append('ref',x.referencia);fd.append('qty',String(batchQty));fd.append('description',x.descricao||'');fd.append('brand',x.marca||'');fd.append('model',x.modelo||'');const resp=await fetch('/.netlify/functions/verify',{method:'POST',body:fd}),raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);const status=(d.status||'INCONCLUSIVO').toLowerCase(),dbStatus=status==='aprovado'?'aprovado':status==='reprovado'?'reprovado':'inconclusivo';const photoPath=`${session.user.id}/${currentOrder.id}/${x.id}/${Date.now()}-${dbStatus}.jpg`;const {error:upErr}=await db.storage.from('verification-photos').upload(photoPath,blob,{contentType:'image/jpeg',upsert:false});if(upErr)throw new Error('A análise foi concluída, mas a foto não pôde ser salva: '+upErr.message);const {error:attErr}=await db.from('verification_attempts').insert({order_id:currentOrder.id,item_id:x.id,user_id:session.user.id,quantidade_lote:batchQty,quantidade_identificada:Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null,resultado:dbStatus,modelo_identificado:d.identified_model||null,marca_identificada:d.identified_brand||null,motivo:d.reason||null,ai_response:d,foto_path:photoPath});if(attErr){await db.storage.from('verification-photos').remove([photoPath]);throw attErr;}const cls=dbStatus==='aprovado'?'ok':dbStatus==='reprovado'?'bad':'inc',markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');$('result').innerHTML=`<div class="${cls}"><h3>${esc(d.status)}</h3><b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un. neste lote<br><b>Identificado:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade:</b> ${esc(d.identified_quantity??'—')}<br><b>Marcações:</b> ${esc(markings)}<br><br>${esc(d.reason||'')}</div>`;if(dbStatus==='aprovado')setTimeout(async()=>{itemConfirmed+=batchQty;const finished=itemConfirmed>=x.quantidade;await db.from('order_items').update({quantidade_conferida:itemConfirmed,status:finished?'aprovado':'em_conferencia'}).eq('id',x.id);x.quantidade_conferida=itemConfirmed;x.status=finished?'aprovado':'em_conferencia';if(!finished){renderPick();$('result').innerHTML=`<div class="ok"><b>Lote aprovado.</b> ${itemConfirmed} de ${x.quantidade} unidades conferidas. Separe o próximo lote.</div>`;return}i++;while(i<items.length&&items[i].status==='aprovado')i++;if(i<items.length){itemConfirmed=items[i].quantidade_conferida||0;renderPick()}else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:'Todos os itens foram aprovados.'});alert('PEDIDO CONFERIDO! Todos os itens foram aprovados.');show('dashboard');loadDashboard()}},900)}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
+if($('refreshMetrics'))$('refreshMetrics').onclick=loadMetrics;
 boot();
 </script></body></html>
