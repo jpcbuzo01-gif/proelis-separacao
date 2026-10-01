@@ -1,9 +1,8 @@
 const SUPABASE_URL = "https://mbxmhojgoqzqfxzajafb.supabase.co";
 
-const json = (statusCode, body) => ({
-  statusCode,
-  headers: {"content-type":"application/json; charset=utf-8"},
-  body: JSON.stringify(body)
+const json = (statusCode, body) => new Response(JSON.stringify(body), {
+  status: statusCode,
+  headers: {"content-type":"application/json; charset=utf-8"}
 });
 
 function absUrl(src, pageUrl){
