@@ -1,41 +1,117 @@
-const CATALOG={
-"485":{ref:"485",description:"Rolamento HCH 6201 2RS DDU C3",brand:"HCH",model:"6201",seal:"DDU"},
-"486":{ref:"486",description:"Rolamento HCH 6202 2RS DDU C3",brand:"HCH",model:"6202",seal:"DDU"}
-};
-const json=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{"content-type":"application/json; charset=utf-8"}});
-export default async(req)=>{
- if(req.method!=="POST")return json({error:"Método não permitido"},405);
- try{
-  const key=Netlify.env.get("OPENAI_API_KEY");if(!key)return json({error:"OPENAI_API_KEY não configurada no Netlify."},500);
-  const form=await req.formData(),ref=String(form.get("ref")||""),qty=Number(form.get("qty")),photo=form.get("photo");
-  const supplied={description:String(form.get("description")||""),brand:String(form.get("brand")||""),model:String(form.get("model")||"")};
-  const base=CATALOG[ref]||{};const exp={ref,description:supplied.description||base.description||"",brand:supplied.brand||base.brand||"",model:supplied.model||base.model||"",seal:base.seal||(supplied.description.toUpperCase().includes("2RS")?"DDU":supplied.description.toUpperCase().includes("ZZ")?"ZZ":"")};
-  if(!ref||!qty||!photo||typeof photo.arrayBuffer!=="function")return json({error:"Referência, quantidade ou foto ausente."},400);
-  const bytes=new Uint8Array(await photo.arrayBuffer());if(bytes.byteLength>4_000_000)return json({error:"Foto ainda está grande demais após compressão."},413);
-  let binary="";for(let n=0;n<bytes.length;n+=0x8000)binary+=String.fromCharCode(...bytes.subarray(n,n+0x8000));
-  const dataUrl="data:image/jpeg;base64,"+btoa(binary);
-  const instruction=`Conferência de estoque Proelis. Use somente evidência visual.
-Esperado: referência ${exp.ref}; descrição ${exp.description}; marca ${exp.brand}; modelo ${exp.model}; quantidade ${qty}.
-Regra HCH: em rolamentos HCH, "2RS" é equivalente à vedação cadastrada como "DDU". Não exija a palavra DDU se 2RS estiver visível. "ZZ" NÃO é equivalente a DDU/2RS.
-APROVADO somente se marca, modelo, quantidade e variante compatível estiverem claramente confirmados.
-REPROVADO se houver marca/modelo/quantidade/variante claramente diferente.
-INCONCLUSIVO se não houver evidência visual suficiente. Nunca aprove só por formato/cor/semelhança.
-Retorne SOMENTE JSON válido:
-{"status":"APROVADO|REPROVADO|INCONCLUSIVO","identified_brand":null,"identified_model":null,"identified_quantity":null,"visible_markings":null,"identified_seal":null,"reason":null}`;
-  const api=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{"authorization":`Bearer ${key}`,"content-type":"application/json"},
-   body:JSON.stringify({model:Netlify.env.get("OPENAI_VISION_MODEL")||"gpt-5.6-luna",input:[{role:"user",content:[{type:"input_text",text:instruction},{type:"input_image",image_url:dataUrl}]}],max_output_tokens:500})});
-  const raw=await api.text();if(!api.ok){let m=raw;try{m=JSON.parse(raw)?.error?.message||raw}catch{}return json({error:`OpenAI (${api.status}): ${m}`},502)}
-  const r=JSON.parse(raw);let text=r.output_text||"";if(!text&&Array.isArray(r.output))for(const it of r.output)if(Array.isArray(it.content))for(const c of it.content)if(c.type==="output_text"&&c.text)text+=c.text;
-  text=text.replace(/```json/gi,"").replace(/```/g,"").trim();let d;try{d=JSON.parse(text)}catch{return json({error:"A IA respondeu em formato inválido.",raw:text},502)}
-  const norm=v=>String(v||"").toUpperCase().replace(/\s+/g," ").trim(),mark=norm(d.visible_markings),seal=norm(d.identified_seal),ib=norm(d.identified_brand),im=norm(d.identified_model);
-  const eb=norm(exp.brand),em=norm(exp.model),isHCH=eb==="HCH",shows2RS=mark.includes("2RS")||seal.includes("2RS"),showsDDU=mark.includes("DDU")||seal.includes("DDU"),showsZZ=mark.includes("ZZ")||seal.includes("ZZ"),expectedDDU=norm(exp.seal)==="DDU"||norm(exp.description).includes("2RS")||norm(exp.description).includes("DDU");
-  if(im&&em&&im!==em){d.status="REPROVADO";d.reason=`Modelo incorreto. Esperado ${exp.model}, identificado ${d.identified_model}.`}
-  if(ib&&eb&&ib!==eb){d.status="REPROVADO";d.reason=`Marca incorreta. Esperado ${exp.brand}, identificado ${d.identified_brand}.`}
-  if(d.identified_quantity!=null&&Number(d.identified_quantity)!==qty){d.status="REPROVADO";d.reason=`Quantidade incorreta. Esperado ${qty}, identificado ${d.identified_quantity}.`}
-  if(isHCH&&expectedDDU&&showsZZ){d.status="REPROVADO";d.reason="Vedação incorreta. Esperado DDU/2RS, mas a embalagem mostra ZZ."}
-  const modelOK=!em||im===em||mark.includes(em),brandOK=!eb||ib===eb||mark.includes(eb),qtyOK=Number(d.identified_quantity)===qty,sealOK=!(isHCH&&expectedDDU)||((shows2RS||showsDDU)&&!showsZZ);
-  if(d.status==="APROVADO"&&(!modelOK||!brandOK||!qtyOK||!sealOK)){d.status="INCONCLUSIVO";d.reason="A fotografia não permite confirmar com segurança todos os dados necessários."}
-  if(isHCH&&expectedDDU&&modelOK&&brandOK&&qtyOK&&shows2RS&&!showsZZ){d.status="APROVADO";d.identified_seal="DDU (equivalente HCH 2RS)";d.reason=`Produto confirmado: ${exp.brand} ${exp.model}, ${qty} unidade(s). Para HCH, 2RS é equivalente a DDU.`}
-  return json(d);
- }catch(e){return json({error:e?.message||"Erro interno na análise."},500)}
+const MODEL = Netlify.env.get("OPENAI_VISION_MODEL") || "gpt-5.6-luna";
+
+function norm(v){ return String(v ?? "").trim(); }
+function upper(v){ return norm(v).toUpperCase(); }
+function cleanErrorType(v){
+  const x=norm(v).toLowerCase();
+  const map={
+    produto:"produto", product:"produto", produto_errado:"produto", wrong_product:"produto",
+    modelo:"modelo", model:"modelo", codigo:"modelo", "código":"modelo", modelo_codigo:"modelo", wrong_model:"modelo",
+    marca:"marca", brand:"marca", wrong_brand:"marca",
+    quantidade:"quantidade", quantity:"quantidade", wrong_quantity:"quantidade",
+    nenhum:"nenhum", none:"nenhum", inconclusivo:"inconclusivo", unclear:"inconclusivo"
+  };
+  return map[x] || "inconclusivo";
+}
+function extractJSON(text){
+  try{return JSON.parse(text)}
+  catch{
+    const m=String(text||"").match(/\{[\s\S]*\}/);
+    if(!m) throw new Error("Resposta da IA sem JSON válido.");
+    return JSON.parse(m[0]);
+  }
+}
+
+export default async (req) => {
+  if(req.method !== "POST") return new Response(JSON.stringify({error:"Método não permitido"}),{status:405,headers:{"content-type":"application/json"}});
+  try{
+    const key=Netlify.env.get("OPENAI_API_KEY");
+    if(!key) throw new Error("OPENAI_API_KEY não configurada.");
+    const fd=await req.formData();
+    const photo=fd.get("photo");
+    const expected={
+      ref:norm(fd.get("ref")), qty:Number(fd.get("qty")||0), description:norm(fd.get("description")),
+      brand:norm(fd.get("brand")), model:norm(fd.get("model"))
+    };
+    if(!photo || typeof photo.arrayBuffer!=="function") throw new Error("Foto não recebida.");
+    const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
+    const mime=photo.type || "image/jpeg";
+    const prompt=`Você é o conferente visual de expedição da Proelis.
+Compare SOMENTE o que é visualmente sustentado pela foto com o item esperado.
+
+ITEM ESPERADO:
+Referência interna Proelis: ${expected.ref}
+Descrição: ${expected.description}
+Marca: ${expected.brand}
+Modelo/código do produto: ${expected.model}
+Quantidade deste lote: ${expected.qty}
+
+REGRAS:
+- APROVADO somente se produto, marca, modelo/código e quantidade estiverem confirmados visualmente.
+- REPROVADO se houver evidência visual clara de incompatibilidade.
+- INCONCLUSIVO se a foto não permitir confirmar com segurança. INCONCLUSIVO não é erro do operador.
+- Para rolamentos HCH, "2RS" é equivalente a "DDU". Não reprove HCH apenas porque a embalagem mostra 2RS e a descrição esperada usa DDU.
+- "ZZ" NÃO é equivalente a DDU/2RS.
+- Não adivinhe marcações ilegíveis.
+- Se houver reprovação, error_type deve indicar a causa PRINCIPAL:
+  produto = produto/tipo diferente;
+  modelo = modelo/código/referência técnica incompatível;
+  marca = marca incompatível;
+  quantidade = quantidade visivelmente diferente.
+- Se aprovado: error_type="nenhum".
+- Se inconclusivo: error_type="inconclusivo".
+- Exemplo: esperado modelo 607 e identificado 6203 => REPROVADO e error_type="modelo", nunca "quantidade".
+
+Responda APENAS JSON válido:
+{
+ "status":"APROVADO|REPROVADO|INCONCLUSIVO",
+ "error_type":"nenhum|produto|modelo|marca|quantidade|inconclusivo",
+ "identified_brand":string|null,
+ "identified_model":string|null,
+ "identified_quantity":number|null,
+ "visible_markings":string[],
+ "reason":string
+}`;
+    const body={
+      model:MODEL,
+      input:[{role:"user",content:[
+        {type:"input_text",text:prompt},
+        {type:"input_image",image_url:`data:${mime};base64,${b64}`}
+      ]}],
+      max_output_tokens:700
+    };
+    const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{
+      "Authorization":`Bearer ${key}`,"Content-Type":"application/json"
+    },body:JSON.stringify(body)});
+    const raw=await r.text();
+    if(!r.ok) return new Response(JSON.stringify({error:`OpenAI ${r.status}: ${raw.slice(0,500)}`}),{status:r.status,headers:{"content-type":"application/json"}});
+    const api=JSON.parse(raw);
+    const text=api.output_text || (api.output||[]).flatMap(o=>o.content||[]).map(c=>c.text||"").join("");
+    const d=extractJSON(text);
+    d.status=upper(d.status);
+    d.error_type=cleanErrorType(d.error_type);
+    d.identified_brand=d.identified_brand==null?null:norm(d.identified_brand);
+    d.identified_model=d.identified_model==null?null:norm(d.identified_model);
+    d.identified_quantity=Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null;
+    if(!Array.isArray(d.visible_markings)) d.visible_markings=d.visible_markings?[norm(d.visible_markings)]:[];
+
+    // Deterministic consistency guard: model mismatch always classifies as modelo.
+    if(d.status==="REPROVADO" && expected.model && d.identified_model &&
+       upper(expected.model)!==upper(d.identified_model)){
+      d.error_type="modelo";
+    } else if(d.status==="REPROVADO" && expected.brand && d.identified_brand &&
+       upper(expected.brand)!==upper(d.identified_brand)){
+      d.error_type="marca";
+    } else if(d.status==="REPROVADO" && d.identified_quantity!==null &&
+       expected.qty>0 && d.identified_quantity!==expected.qty &&
+       !["modelo","marca","produto"].includes(d.error_type)){
+      d.error_type="quantidade";
+    }
+    if(d.status==="APROVADO") d.error_type="nenhum";
+    if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
+
+    return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
+  }catch(e){
+    return new Response(JSON.stringify({error:e.message||String(e)}),{status:500,headers:{"content-type":"application/json"}});
+  }
 };
