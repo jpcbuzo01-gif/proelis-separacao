@@ -35,7 +35,7 @@ export const handler = async (event) => {
 
   try {
 
-    const secret = Netlify.env.get("SUPABASE_SECRET_KEY");
+   const secret = process.env.SUPABASE_SECRET_KEY;
 
     if (!secret) {
       return json(500, {
