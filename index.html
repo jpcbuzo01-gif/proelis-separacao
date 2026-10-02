@@ -14,7 +14,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
 .station-opbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.station-opbar button{flex:1;min-width:150px}
 #stationLast{margin-top:10px;font-weight:700}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V8.2.1</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V8.2.2</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -140,7 +140,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
         <button id="stationSimApply" type="button">SIMULAR PESO ESTÁVEL</button>
         <button id="stationSimZero" class="secondary" type="button">SIMULAR RETIRADA / ZERO</button>
       </div>
-      <div class="small muted" style="margin-top:8px">A simulação usa o ciclo final: peso estável → pequena espera → foto automática → IA → retirar produto → zero → próximo item.</div>
+      <div class="small muted" style="margin-top:8px">A simulação agora conclui automaticamente após a aprovação. Com a balança física, a conclusão acontecerá quando a Urano detectar o retorno real a zero.</div>
     </div>
   </div>
   <div id="photoCard" class="c"><h3>Foto dos itens separados</h3><input id="photo" type="file" accept="image/*" capture="environment"><img id="preview" class="hide"><button id="verify" class="full">ANALISAR FOTO</button><div id="result"></div><p class="muted">O sistema só avança após as conferências obrigatórias do produto.</p></div>
@@ -527,7 +527,7 @@ async function deleteProductPhoto(id,path,productId){
 }
 
 let currentPickProduct=null, visualApproved=false, weightApproved=false, scalePort=null, scaleReader=null;
-let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null,pendingApproval:null,operationMode:false,lastTriggerAt:0};
+let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null,pendingApproval:null,operationMode:false,lastTriggerAt:0,autoZeroTimer:null};
 function setStationState(text,kind='wait'){
   const el=$('stationState'); if(!el)return;
   const bg={wait:'#fff3cd',analyze:'#dbeafe',ok:'#d1fae5',bad:'#fee2e2',inc:'#ffedd5',manual:'#f3f4f6'}[kind]||'#f3f4f6';
@@ -555,7 +555,7 @@ async function startStation(){
   }catch(e){setStationState('🔴 NÃO FOI POSSÍVEL ATIVAR A CÂMERA','bad');$('stationSensors').textContent=e.message||e}
 }
 function stopStation(){
-  station.active=false;station.processing=false;station.awaitZero=false;station.pendingApproval=null;clearInterval(station.simTimer);
+  station.active=false;station.processing=false;station.awaitZero=false;station.pendingApproval=null;clearInterval(station.simTimer);clearTimeout(station.autoZeroTimer);
   if(station.stream)station.stream.getTracks().forEach(t=>t.stop());station.stream=null;
   $('stationVideo').srcObject=null;$('stationVideo').classList.add('hide');$('stationStart').classList.remove('hide');$('stationStop').classList.add('hide');
   setOperationMode(false);setStationState('MODO MANUAL','manual');$('stationSensors').textContent='';
@@ -596,8 +596,14 @@ async function stationAnalyzeStableWeight(measured){
       if(visualApproved&&(!cfg.required||weightApproved)){
         station.pendingApproval={x,batchQty};stationLast(`REF. ${x.referencia} • aprovado • ${measured.toFixed(1)} g`);
         setStationState('🟢 CORRETO — RETIRE O PRODUTO','ok');
-        if($('stationScaleStatus'))$('stationScaleStatus').innerHTML='<b>Produto aprovado.</b> Na simulação, clique em SIMULAR RETIRADA / ZERO para concluir o item.';
         station.awaitZero=true;
+        if($('stationScaleStatus'))$('stationScaleStatus').innerHTML='<b>Produto aprovado.</b> Simulando retirada automática...';
+        // Em simulação, representa automaticamente a balança retornando a zero.
+        // Com a Urano física, o zero virá da própria leitura USB.
+        if(!$('weightMode') || $('weightMode').value==='simulacao'){
+          clearTimeout(station.autoZeroTimer);
+          station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&station.pendingApproval)feedStationWeight(0)},1200);
+        }
       }else{
         station.pendingApproval=null;
         setStationState('🟠 NÃO FOI POSSÍVEL APROVAR — RETIRE O PRODUTO','inc');
@@ -624,9 +630,8 @@ function feedStationWeight(g){
         setStationState('🟢 PRODUTO RETIRADO — FINALIZANDO ITEM...','ok');
         station.processing=true;
         finishApprovedBatch(pending.x,pending.batchQty).then(()=>{
-          station.processing=false;
-          if(station.active && currentOrder && items[i]){
-            station.weights=[];station.lastTriggerAt=0;
+          station.processing=false;station.weights=[];station.lastTriggerAt=0;
+          if(station.active && currentOrder && i<items.length){
             if($('stationScaleStatus'))$('stationScaleStatus').textContent='MODO SIMULAÇÃO • aguardando próximo produto.';
             setStationState('🟡 COLOQUE O PRÓXIMO PRODUTO NA BALANÇA','wait');
           }
