@@ -28,6 +28,20 @@ function extractJSON(text){
 
 
 
+function idTokens(v){
+  const s=upper(v).replace(/[^A-Z0-9]+/g," ");
+  // Product identifiers: numeric/alphanumeric tokens that are useful to distinguish variants.
+  return [...new Set(s.split(/\s+/).filter(t=>t && (/\d/.test(t)) && t.length>=3))];
+}
+function identifiersConflict(expectedValue,identifiedValue){
+  const e=idTokens(expectedValue), a=idTokens(identifiedValue);
+  if(!e.length || !a.length) return false;
+  // If they share at least one decisive identifier, do not reject just because descriptions differ
+  // (ex. "6200 2RS DDU C3" vs "6200 2RS C3").
+  if(e.some(x=>a.includes(x))) return false;
+  // Different same-shaped numeric/model identifiers are a real contradiction (6200 vs 6201, 30UF vs 25UF, etc).
+  return true;
+}
 function meaningful(v){
   const x=upper(v);
   return x && !["A CONFIRMAR","N/A","NA","SEM MODELO","NÃO INFORMADO","NAO INFORMADO","-"].includes(x);
@@ -108,7 +122,9 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
 - Similaridade visual, mesma família, mesma cor, mesma embalagem ou peso compatível NÃO bastam sozinhos.
 - Se houver modelo, código, tensão, capacitância, medida, bitola, espessura, dimensão, potência, vedação, variante, marcação ou outra característica técnica visível que diferencie variantes, use essa característica como evidência decisiva.
-- Se a característica necessária para distinguir variantes não estiver visível/legível, responda INCONCLUSIVO. Nunca presuma que é a variante correta.
+- Quando o cadastro tiver uma característica técnica decisiva (modelo/código/capacidade/medida etc.), procure essa característica primeiro.
+- Se ela estiver claramente visível e compatível, isso é evidência forte para APROVAR, mesmo que outros textos secundários estejam pequenos ou parcialmente ilegíveis.
+- Se a característica decisiva não estiver legível e existirem variantes visualmente indistinguíveis, responda INCONCLUSIVO. Nunca invente a variante.
 - Se aparecer uma característica incompatível com o esperado, responda REPROVADO.
 - A FOTO OFICIAL ajuda a localizar características e reconhecer o produto, mas diferença estética isolada não reprova.
 - O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
@@ -129,8 +145,10 @@ REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
 Antes de escolher APROVADO, faça internamente esta checagem:
 A) Quais atributos visíveis identificam este produto?
 B) Existe alguma contradição com o cadastro?
-C) Há alguma variante muito parecida que não foi descartada pela evidência visível?
-Se C for sim, o resultado deve ser INCONCLUSIVO, não APROVADO.
+C) A evidência visível confirma uma característica decisiva do cadastro ou existe alguma contradição?
+Se uma característica decisiva estiver claramente confirmada e não houver contradições, APROVADO é permitido.
+Se não houver evidência suficiente para diferenciar variantes, INCONCLUSIVO.
+Se houver característica incompatível, REPROVADO.
 
 error_type na causa PRINCIPAL:
 produto = tipo/família diferente
@@ -151,6 +169,7 @@ Responda APENAS JSON válido:
  "positive_evidence":string[],
  "contradictions":string[],
  "variant_exclusion_evidence":string[],
+ "decisive_attribute_seen":string|null,
  "reason":string
 }`;
     const body={
@@ -178,6 +197,7 @@ Responda APENAS JSON válido:
     d.identified_brand=d.identified_brand==null?null:norm(d.identified_brand);
     d.identified_model=d.identified_model==null?null:norm(d.identified_model);
     d.identified_quantity=Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null;
+    d.decisive_attribute_seen=d.decisive_attribute_seen==null?null:norm(d.decisive_attribute_seen);
     if(!Array.isArray(d.visible_markings)) d.visible_markings=d.visible_markings?[norm(d.visible_markings)]:[];
     if(!Array.isArray(d.positive_evidence)) d.positive_evidence=[];
     if(!Array.isArray(d.contradictions)) d.contradictions=[];
@@ -194,8 +214,7 @@ Responda APENAS JSON válido:
     // Se existe modelo/código oficial significativo e a IA identificou outro, força reprovação,
     // inclusive quando o modelo tentou responder APROVADO.
     if(meaningful(expected.model) && meaningful(d.identified_model) &&
-       upper(expected.model)!==upper(d.identified_model)){
-      // Mantém equivalência HCH 2RS/DDU tratada semanticamente pelo modelo; aqui só compara o campo principal.
+       identifiersConflict(expected.model,d.identified_model)){
       d.status="REPROVADO";
       d.error_type="modelo";
       d.reason=`Modelo/código identificado (${d.identified_model}) incompatível com o esperado (${expected.model}). ${norm(d.reason)}`.trim();
@@ -210,7 +229,7 @@ Responda APENAS JSON válido:
 
     // Deterministic consistency guard: model mismatch always classifies as modelo.
     if(d.status==="REPROVADO" && expected.model && d.identified_model &&
-       upper(expected.model)!==upper(d.identified_model)){
+       identifiersConflict(expected.model,d.identified_model)){
       d.error_type="modelo";
     } else if(d.status==="REPROVADO" && expected.brand && d.identified_brand &&
        upper(expected.brand)!==upper(d.identified_brand)){
@@ -224,7 +243,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="strict_universal_v8_4";
+    d.validation_policy="balanced_universal_v8_4_1";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
