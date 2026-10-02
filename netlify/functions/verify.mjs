@@ -27,6 +27,21 @@ function extractJSON(text){
 }
 
 
+
+function meaningful(v){
+  const x=upper(v);
+  return x && !["A CONFIRMAR","N/A","NA","SEM MODELO","NÃO INFORMADO","NAO INFORMADO","-"].includes(x);
+}
+async function getCatalogProduct(ref){
+  if(!SECRET || !ref) return null;
+  const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
+  const fields="id,referencia,nome,descricao,categoria,subcategoria,marca,fabricante,modelo,codigo_fabricante,peso_kg,medidas,especificacoes,observacoes_separacao";
+  const r=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=${fields}&limit=1`,{headers:h});
+  if(!r.ok) return null;
+  const a=await r.json();
+  return a?.[0]||null;
+}
+
 async function getReferenceImage(ref){
   if(!SECRET || !ref) return null;
   const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
@@ -58,39 +73,72 @@ export default async (req) => {
       brand:norm(fd.get("brand")), model:norm(fd.get("model"))
     };
     if(!photo || typeof photo.arrayBuffer!=="function") throw new Error("Foto não recebida.");
+    const catalog=await getCatalogProduct(expected.ref);
+    if(catalog){
+      expected.description=norm(catalog.nome||catalog.descricao||expected.description);
+      expected.brand=norm(catalog.marca||catalog.fabricante||expected.brand);
+      expected.model=norm(catalog.modelo||catalog.codigo_fabricante||expected.model);
+    }
     const referenceImage=await getReferenceImage(expected.ref);
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
-    const prompt=`Você é o conferente visual de expedição da Proelis.
-Você receberá a FOTO DO SEPARADOR e, quando disponível, uma FOTO OFICIAL DE REFERÊNCIA do catálogo.
-A foto oficial é evidência complementar: ajuda a reconhecer família, embalagem, formato e marcações, mas NÃO pode sozinha causar reprovação.
-A decisão deve ser sustentada principalmente pelo que está visível na FOTO DO SEPARADOR.
+    const prompt=`Você é o sistema de conferência visual de expedição da Proelis.
+Sua prioridade é EVITAR FALSO POSITIVO: nunca aprove um item apenas porque ele parece pertencer à mesma família do produto esperado.
 
-ITEM ESPERADO:
+Você receberá:
+1) FOTO DO SEPARADOR — é a mercadoria que deve ser julgada.
+2) Quando disponível, FOTO OFICIAL DO CATÁLOGO — somente referência complementar.
+3) Dados oficiais do cadastro do produto.
+
+PRODUTO ESPERADO:
 Referência interna Proelis: ${expected.ref}
-Descrição: ${expected.description}
+Nome/descrição: ${expected.description}
 Marca: ${expected.brand}
-Modelo/código do produto: ${expected.model}
-Quantidade deste lote: ${expected.qty}
+Modelo/código: ${expected.model}
+Quantidade do lote: ${expected.qty}
+Categoria: ${norm(catalog?.categoria)}
+Subcategoria: ${norm(catalog?.subcategoria)}
+Fabricante: ${norm(catalog?.fabricante)}
+Código fabricante: ${norm(catalog?.codigo_fabricante)}
+Medidas: ${norm(catalog?.medidas)}
+Especificações: ${JSON.stringify(catalog?.especificacoes||{})}
+Observações de separação: ${norm(catalog?.observacoes_separacao)}
 
-REGRAS:
-- APROVADO somente se produto, marca, modelo/código e quantidade estiverem confirmados visualmente.
-- REPROVADO se houver evidência visual clara de incompatibilidade.
-- INCONCLUSIVO se a foto não permitir confirmar com segurança. INCONCLUSIVO não é erro do operador.
-- Para rolamentos HCH, "2RS" é equivalente a "DDU". Não reprove HCH apenas porque a embalagem mostra 2RS e a descrição esperada usa DDU.
+REGRA UNIVERSAL DE APROVAÇÃO:
+- APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
+- Similaridade visual, mesma família, mesma cor, mesma embalagem ou peso compatível NÃO bastam sozinhos.
+- Se houver modelo, código, tensão, capacitância, medida, bitola, espessura, dimensão, potência, vedação, variante, marcação ou outra característica técnica visível que diferencie variantes, use essa característica como evidência decisiva.
+- Se a característica necessária para distinguir variantes não estiver visível/legível, responda INCONCLUSIVO. Nunca presuma que é a variante correta.
+- Se aparecer uma característica incompatível com o esperado, responda REPROVADO.
+- A FOTO OFICIAL ajuda a localizar características e reconhecer o produto, mas diferença estética isolada não reprova.
+- O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
+- Quantidade deve corresponder ao lote solicitado quando for possível contar com segurança.
+- Não adivinhe texto, código ou quantidade escondida/ilegível.
+- Peso é validado separadamente pelo sistema. Peso compatível nunca transforma identificação visual duvidosa em APROVADO.
+
+EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
+- Esperado 6201 e foto mostra 6200 => REPROVADO/modelo.
+- Esperado capacitor 30µF e foto mostra 25µF => REPROVADO/modelo.
+- Esperado peça de uma variante específica, mas o código/medida que diferencia as variantes não pode ser lido => INCONCLUSIVO.
+- Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
+
+REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
+- Rolamentos HCH: "2RS" é equivalente a "DDU".
 - "ZZ" NÃO é equivalente a DDU/2RS.
-- Não adivinhe marcações ilegíveis.
-- A FOTO OFICIAL pode ter embalagem, ângulo, cor ou revisão visual diferente. Diferença estética isolada NÃO reprova.
-- Se a foto oficial não estiver disponível, siga normalmente usando os dados textuais e a foto do separador.
-- Se o item do separador não permitir confirmar marca/modelo/quantidade com segurança, use INCONCLUSIVO, não REPROVADO.
-- Se houver reprovação, error_type deve indicar a causa PRINCIPAL:
-  produto = produto/tipo diferente;
-  modelo = modelo/código/referência técnica incompatível;
-  marca = marca incompatível;
-  quantidade = quantidade visivelmente diferente.
-- Se aprovado: error_type="nenhum".
-- Se inconclusivo: error_type="inconclusivo".
-- Exemplo: esperado modelo 607 e identificado 6203 => REPROVADO e error_type="modelo", nunca "quantidade".
+
+Antes de escolher APROVADO, faça internamente esta checagem:
+A) Quais atributos visíveis identificam este produto?
+B) Existe alguma contradição com o cadastro?
+C) Há alguma variante muito parecida que não foi descartada pela evidência visível?
+Se C for sim, o resultado deve ser INCONCLUSIVO, não APROVADO.
+
+error_type na causa PRINCIPAL:
+produto = tipo/família diferente
+modelo = modelo/código/especificação/variante técnica incompatível
+marca = marca incompatível
+quantidade = quantidade incompatível
+nenhum = aprovado
+inconclusivo = evidência insuficiente
 
 Responda APENAS JSON válido:
 {
@@ -100,6 +148,9 @@ Responda APENAS JSON válido:
  "identified_model":string|null,
  "identified_quantity":number|null,
  "visible_markings":string[],
+ "positive_evidence":string[],
+ "contradictions":string[],
+ "variant_exclusion_evidence":string[],
  "reason":string
 }`;
     const body={
@@ -128,6 +179,34 @@ Responda APENAS JSON válido:
     d.identified_model=d.identified_model==null?null:norm(d.identified_model);
     d.identified_quantity=Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null;
     if(!Array.isArray(d.visible_markings)) d.visible_markings=d.visible_markings?[norm(d.visible_markings)]:[];
+    if(!Array.isArray(d.positive_evidence)) d.positive_evidence=[];
+    if(!Array.isArray(d.contradictions)) d.contradictions=[];
+    if(!Array.isArray(d.variant_exclusion_evidence)) d.variant_exclusion_evidence=[];
+
+    // V8.4: trava universal contra falso positivo.
+    // Uma contradição explícita jamais pode terminar como APROVADO.
+    if(d.status==="APROVADO" && d.contradictions.length){
+      d.status="REPROVADO";
+      d.error_type="modelo";
+      d.reason=`Contradição encontrada: ${d.contradictions.join("; ")}. ${norm(d.reason)}`.trim();
+    }
+
+    // Se existe modelo/código oficial significativo e a IA identificou outro, força reprovação,
+    // inclusive quando o modelo tentou responder APROVADO.
+    if(meaningful(expected.model) && meaningful(d.identified_model) &&
+       upper(expected.model)!==upper(d.identified_model)){
+      // Mantém equivalência HCH 2RS/DDU tratada semanticamente pelo modelo; aqui só compara o campo principal.
+      d.status="REPROVADO";
+      d.error_type="modelo";
+      d.reason=`Modelo/código identificado (${d.identified_model}) incompatível com o esperado (${expected.model}). ${norm(d.reason)}`.trim();
+    }
+
+    // APROVADO sem nenhuma evidência positiva declarada vira INCONCLUSIVO.
+    if(d.status==="APROVADO" && d.positive_evidence.length===0 && d.visible_markings.length===0){
+      d.status="INCONCLUSIVO";
+      d.error_type="inconclusivo";
+      d.reason=`Não há evidência visual positiva suficiente para confirmar o produto. ${norm(d.reason)}`.trim();
+    }
 
     // Deterministic consistency guard: model mismatch always classifies as modelo.
     if(d.status==="REPROVADO" && expected.model && d.identified_model &&
@@ -144,6 +223,8 @@ Responda APENAS JSON válido:
     if(d.status==="APROVADO") d.error_type="nenhum";
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
+    d.catalog_product_used=Boolean(catalog);
+    d.validation_policy="strict_universal_v8_4";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
