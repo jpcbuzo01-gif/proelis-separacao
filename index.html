@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.8.1</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.8.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -156,11 +156,57 @@ body.station-operation #stationPanel{border-width:3px!important}
  .order{padding:13px}
  .rowactions button{width:100%}
 }
+
+/* V8.8.2 acabamento visual e novo cabeçalho */
+.proelis-header{padding:0;background:linear-gradient(105deg,#05638f 0%,#0878ad 62%,#0b8dc5 100%);border-bottom:4px solid #16b5e8}
+.proelis-header-inner{max-width:1040px;margin:auto;min-height:74px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.proelis-brand{display:flex;align-items:center;gap:11px}
+.proelis-mark{width:45px;height:45px;border-radius:9px;background:#fff;display:grid;place-items:center;box-shadow:0 3px 12px rgba(0,0,0,.12)}
+.proelis-mark span{font-size:28px;line-height:1;font-weight:950;color:#0878ad;font-style:italic}
+.proelis-brand-text{display:flex;flex-direction:column;line-height:1}
+.proelis-brand-text strong{font-size:22px;letter-spacing:.7px;color:#fff}
+.proelis-brand-text small{font-size:10px;font-weight:800;letter-spacing:1.3px;color:#d9f4ff;margin-top:6px}
+.proelis-header-right{display:flex;align-items:center;gap:8px}
+.system-chip{font-size:10px;font-weight:900;letter-spacing:.8px;color:#e8f8ff;border:1px solid rgba(255,255,255,.28);padding:6px 9px;border-radius:999px}
+
+/* indicadores com significado visual */
+#stats .stat:nth-child(1){border-left:5px solid #e5ad13;background:linear-gradient(90deg,#fffaf0 0,#fff 32%)}
+#stats .stat:nth-child(1):before{display:none}
+#stats .stat:nth-child(1) b{color:#9a6b00}
+#stats .stat:nth-child(2){border-left:5px solid #168cc3;background:linear-gradient(90deg,#eff9fd 0,#fff 32%)}
+#stats .stat:nth-child(2):before{display:none}
+#stats .stat:nth-child(2) b{color:#0878ad}
+#stats .stat:nth-child(3){border-left:5px solid #28a568;background:linear-gradient(90deg,#effaf4 0,#fff 32%)}
+#stats .stat:nth-child(3):before{display:none}
+#stats .stat:nth-child(3) b{color:#1b8250}
+
+/* status do pedido */
+.pill.status-waiting{background:#fff3cf;color:#815d00;border:1px solid #f1d57d}
+.pill.status-progress{background:#e5f5fb;color:#07668f;border:1px solid #bce1ef}
+.pill.status-done{background:#e7f7ee;color:#177344;border:1px solid #bde6cf}
+.pill.status-cancelled{background:#f2f3f4;color:#66717a;border:1px solid #dadddf}
+
+/* hierarquia dos pedidos */
+.order-client{font-size:15px;font-weight:700;color:#344c58;margin-top:3px}
+.order-meta{font-size:12px;color:#71818a;margin-top:3px}
+.order .rowactions .secondary{background:#f3f8fa;color:#176181;border-color:#d6e7ee}
+.order .rowactions .secondary:hover{background:#e7f3f7}
+@media(max-width:620px){
+ .proelis-header-inner{min-height:62px;padding:8px 10px}
+ .proelis-mark{width:39px;height:39px}.proelis-mark span{font-size:24px}
+ .proelis-brand-text strong{font-size:18px}.proelis-brand-text small{font-size:8px;letter-spacing:.9px}
+ .system-chip{display:none}
+}
 </style></head><body>
-<header><div style="max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px">
-  <div><span class="y" style="font-size:20px;letter-spacing:.5px">PROELIS</span><span style="opacity:.95"> • Separação Inteligente</span></div>
-  <span class="version-badge">V8.8.1</span>
-</div></header><div class="w">
+<header class="proelis-header">
+  <div class="proelis-header-inner">
+    <div class="proelis-brand">
+      <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
+      <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
+    </div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V8.8.2</span></div>
+  </div>
+</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -335,7 +381,7 @@ async function boot(){const {data:{session:s}}=await db.auth.getSession();sessio
 async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;if(profile.ativo===false){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Seu usuário está desativado. Procure um administrador.</div>';return}$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
 $('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
 $('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='catalog')await loadCatalog();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
-async function loadDashboard(){let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});const {data,error}=await q;if(error){$('ordersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}const rows=data||[];const counts={aguardando:0,em_separacao:0,concluido:0};rows.forEach(o=>{if(counts[o.status]!=null)counts[o.status]++});$('stats').innerHTML=`<div class="stat"><small>Aguardando</small><br><b>${counts.aguardando}</b></div><div class="stat"><small>Em separação</small><br><b>${counts.em_separacao}</b></div><div class="stat"><small>Concluídos</small><br><b>${counts.concluido}</b></div>`;$('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div>${esc(o.cliente||'Cliente não informado')}</div><div class="who">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div></div><span class="pill">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado.</p>';document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history))}
+async function loadDashboard(){let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});const {data,error}=await q;if(error){$('ordersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}const rows=data||[];const counts={aguardando:0,em_separacao:0,concluido:0};rows.forEach(o=>{if(counts[o.status]!=null)counts[o.status]++});$('stats').innerHTML=`<div class="stat"><small>Aguardando</small><br><b>${counts.aguardando}</b></div><div class="stat"><small>Em separação</small><br><b>${counts.em_separacao}</b></div><div class="stat"><small>Concluídos</small><br><b>${counts.concluido}</b></div>`;$('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div></div><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado.</p>';document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history))}
 
 
 function errorKind(a){
