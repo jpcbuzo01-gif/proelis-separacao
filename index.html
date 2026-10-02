@@ -14,7 +14,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
 .station-opbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.station-opbar button{flex:1;min-width:150px}
 #stationLast{margin-top:10px;font-weight:700}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V8.4.3</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V8.6</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -145,7 +145,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
     <div class="station-opbar"><button id="stationOperationMode" class="secondary" type="button">MODO OPERAÇÃO</button><button id="stationEmergencyManual" class="secondary hide" type="button">MOSTRAR CONTROLES MANUAIS</button></div>
     <div id="stationScalePanel" class="reference-box" style="margin-top:12px">
       <b>BALANÇA URANO POP-S 31/2 USB</b>
-      <div id="stationScaleStatus" class="small muted" style="margin-top:5px">Modo de teste — balança física ainda não conectada.</div>
+      <div id="stationScaleStatus" class="small muted" style="margin-top:5px">Balança física não conectada • Protocolo recomendado: PROT F.</div>
       <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px">
         <label style="flex:1;min-width:180px">Simular peso (g)<input id="stationSimWeight" type="number" min="0" step="0.1" placeholder="Ex.: 650"></label>
         <button id="stationSimApply" type="button">SIMULAR PESO ESTÁVEL</button>
@@ -162,10 +162,11 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
     <label>Peso lido (g)<input id="weightReading" type="number" min="0" step="0.1" placeholder="0,0"></label>
     <label>Modo<select id="weightMode"><option value="simulacao">SIMULAÇÃO / DIGITAÇÃO</option><option value="serial">BALANÇA USB/SERIAL</option></select></label>
   </div>
-  <button id="connectScale" class="secondary" type="button">CONECTAR BALANÇA USB</button>
+  <button id="connectScale" class="secondary" type="button">CONECTAR BALANÇA URANO</button>
+  <button id="disconnectScale" class="secondary" type="button">DESCONECTAR BALANÇA</button>
   <button id="confirmWeight" type="button">CONFERIR PESO</button>
   <div id="weightResult"></div>
-  <p class="muted small">A V8.1 está preparada para testes automáticos em simulação. A leitura USB final será validada com a Urano POP-S 31/2 quando a balança chegar.</p>
+  <p class="muted small">V8.6 preparada para Urano POP-S USB. Configure a balança em PROT F (F → 3) e conecte no computador da estação. O modo simulação continua disponível.</p>
 </div>
  </section>
 </div></div>
@@ -693,19 +694,75 @@ function showWeightForPick(p,qty){
   $('weightCard').classList.remove('hide');
   $('weightExpected').innerHTML=c.valid?`<b>PESO OBRIGATÓRIO</b><br>Peso unitário: ${(Number(p.peso_kg)*1000).toFixed(1)} g • Lote: ${qty} un.<br>Esperado: <b>${c.expected.toFixed(1)} g</b> • Tolerância: ±${c.tol}%<br>Faixa aceita: ${c.min.toFixed(1)} a ${c.max.toFixed(1)} g`:`<b>PESO OBRIGATÓRIO</b><br><span class="bad">Cadastre o peso unitário deste produto antes da separação.</span>`;
 }
-async function readScaleSerial(){
-  if(!('serial' in navigator))throw new Error('Este navegador não oferece Web Serial. Use Chrome/Edge no computador da balança.');
-  if(!scalePort){scalePort=await navigator.serial.requestPort();await scalePort.open({baudRate:9600});}
-  $('weightResult').innerHTML='<div class="inc">Balança conectada. Aguardando leitura...</div>';
-  const decoder=new TextDecoderStream();scalePort.readable.pipeTo(decoder.writable).catch(()=>{});
-  scaleReader=decoder.readable.getReader();let buffer='';
-  while(true){
-    const {value,done}=await scaleReader.read();if(done)break;buffer+=value||'';
-    const nums=buffer.match(/[-+]?\d+(?:[.,]\d+)?/g);
-    if(nums?.length){const n=Number(nums[nums.length-1].replace(',','.'));if(Number.isFinite(n)){$('weightReading').value=n;feedStationWeight(n);if(!station.active)break}}
-    if(buffer.length>500)buffer=buffer.slice(-250);
+function parseUranoProtF(bytes){
+  // PROT F: STX + sinal + peso com ponto + ETX. Manual Urano: 9 bytes.
+  const out=[];
+  for(let a=0;a<bytes.length;a++){
+    if(bytes[a]!==0x02)continue;
+    const b=bytes.indexOf(0x03,a+1);
+    if(b<0)break;
+    const payload=new TextDecoder().decode(new Uint8Array(bytes.slice(a+1,b)));
+    if(/^I+$/.test(payload)){out.push({state:'unstable'});a=b;continue}
+    if(/^S+$/.test(payload)){out.push({state:'overload'});a=b;continue}
+    const m=payload.match(/^\s*(-?\d+(?:\.\d+)?)$/);
+    if(m){const kg=Number(m[1]);if(Number.isFinite(kg))out.push({state:'stable',grams:kg*1000,raw:payload})}
+    a=b;
   }
-  try{scaleReader.releaseLock()}catch{}
+  return out;
+}
+async function closeScaleSerial(){
+  try{if(scaleReader){await scaleReader.cancel();scaleReader.releaseLock()}}catch{}
+  scaleReader=null;
+  try{if(scalePort){await scalePort.close()}}catch{}
+  scalePort=null;
+  if($('stationScaleStatus'))$('stationScaleStatus').textContent='Balança desconectada • PROT F recomendado.';
+}
+async function readScaleSerial(){
+  if(!('serial' in navigator))throw new Error('Web Serial não está disponível neste navegador. Para a balança física use Chrome ou Edge no computador da estação.');
+  if(!scalePort){
+    scalePort=await navigator.serial.requestPort();
+    await scalePort.open({baudRate:9600,dataBits:8,stopBits:1,parity:'none',flowControl:'none'});
+  }
+  if($('weightMode'))$('weightMode').value='serial';
+  if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟢 URANO CONECTADA • aguardando peso estável • PROT F';
+  $('weightResult').innerHTML='<div class="ok"><b>URANO CONECTADA.</b> Aguardando leitura estável...</div>';
+  const reader=scalePort.readable.getReader();scaleReader=reader;
+  let bytes=[],textFallback='';
+  try{
+    while(true){
+      const {value,done}=await reader.read();if(done)break;
+      if(!value)continue;
+      bytes.push(...value);if(bytes.length>2048)bytes=bytes.slice(-1024);
+      const frames=parseUranoProtF(bytes);
+      if(frames.length){
+        const f=frames[frames.length-1];
+        const lastEtx=bytes.lastIndexOf(0x03);if(lastEtx>=0)bytes=bytes.slice(lastEtx+1);
+        if(f.state==='unstable'){
+          if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟡 URANO CONECTADA • peso instável';
+          continue;
+        }
+        if(f.state==='overload'){
+          if($('stationScaleStatus'))$('stationScaleStatus').textContent='🔴 URANO • SOBRECARGA';
+          continue;
+        }
+        if(f.state==='stable'){
+          const g=f.grams;
+          $('weightReading').value=g.toFixed(1);
+          if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🟢 URANO • PESO ESTÁVEL: ${g.toFixed(1)} g`;
+          feedStationWeight(g);
+          continue;
+        }
+      }
+      // Fallback diagnóstico para outros protocolos: não aprova sozinho; apenas mostra leitura textual.
+      textFallback+=new TextDecoder().decode(value);
+      if(textFallback.length>500)textFallback=textFallback.slice(-250);
+      const nums=textFallback.match(/[-+]?\d+(?:[.,]\d+)?/g);
+      if(nums?.length && $('stationScaleStatus'))$('stationScaleStatus').textContent=`🟠 Dados recebidos, mas fora do PROT F: ${nums[nums.length-1]}. Configure F → 3 → PROT F.`;
+    }
+  }finally{
+    try{reader.releaseLock()}catch{}
+    scaleReader=null;
+  }
 }
 function formatElapsed(ms){
   const s=Math.max(0,Math.round(ms/1000)),m=Math.floor(s/60),r=s%60;
@@ -780,9 +837,11 @@ if($('stationSimZero'))$('stationSimZero').onclick=()=>{
 
 if($('stationStop'))$('stationStop').onclick=stopStation;
 if($('connectScale'))$('connectScale').onclick=async()=>{try{await readScaleSerial()}catch(e){$('weightResult').innerHTML=`<div class="err">${esc(e.message||e)}</div>`}};
+if($('disconnectScale'))$('disconnectScale').onclick=async()=>{await closeScaleSerial();$('weightResult').innerHTML='<div class="inc">Balança desconectada.</div>'};
 if($('weightReading'))$('weightReading').oninput=()=>{if(station.active&&$('weightMode').value==='simulacao'){const n=Number(String($('weightReading').value).replace(',','.'));if(Number.isFinite(n)){for(let k=0;k<4;k++)station.weights.push({g:n,t:Date.now()-k*200});feedStationWeight(n)}}};
-if($('weightMode'))$('weightMode').onchange=()=>{$('connectScale').style.display=$('weightMode').value==='serial'?'inline-block':'none'};
+if($('weightMode'))$('weightMode').onchange=()=>{const serial=$('weightMode').value==='serial';$('connectScale').style.display=serial?'inline-block':'none';if($('disconnectScale'))$('disconnectScale').style.display=serial?'inline-block':'none'};
 if($('connectScale'))$('connectScale').style.display='none';
+if($('disconnectScale'))$('disconnectScale').style.display='none';
 if($('confirmWeight'))$('confirmWeight').onclick=async()=>{
   const x=items[i],remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining),c=weightCfg(currentPickProduct,batchQty),measured=Number($('weightReading').value);
   if(!c.valid){$('weightResult').innerHTML='<div class="err">Peso unitário não cadastrado para este produto.</div>';return}
