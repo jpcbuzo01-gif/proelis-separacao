@@ -14,7 +14,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
 .station-opbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.station-opbar button{flex:1;min-width:150px}
 #stationLast{margin-top:10px;font-weight:700}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V8.4.2</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V8.4.3</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -586,7 +586,7 @@ async function stationAnalyzeStableWeight(measured){
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_reprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g`});
       station.retryCount++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
       setStationState('🔴 PESO INCORRETO — RETIRE E TENTE NOVAMENTE','bad');station.awaitZero=true;station.processing=false;
-      if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},1200)}
+      if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
       return;
     }
     setStationState('🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
@@ -622,7 +622,7 @@ async function stationAnalyzeStableWeight(measured){
         stationLast(`REF. ${x.referencia} • tentativa ${station.retryCount} não aprovada`);
         if(!$('weightMode') || $('weightMode').value==='simulacao'){
           clearTimeout(station.autoZeroTimer);
-          station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},1200);
+          station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000);
         }
       }
       station.processing=false;
