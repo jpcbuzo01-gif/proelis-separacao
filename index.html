@@ -528,7 +528,7 @@ async function deleteProductPhoto(id,path,productId){
 }
 
 let currentPickProduct=null, visualApproved=false, weightApproved=false, scalePort=null, scaleReader=null;
-let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null,pendingApproval:null,operationMode:false,lastTriggerAt:0,autoZeroTimer:null,retryCount:0,lastItemId:null};
+let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null,pendingApproval:null,operationMode:false,lastTriggerAt:0,autoZeroTimer:null,retryCount:0,lastItemId:null,startedAt:null,approvedLots:0,rejectedAttempts:0};
 function setStationState(text,kind='wait'){
   const el=$('stationState'); if(!el)return;
   const bg={wait:'#fff3cd',analyze:'#dbeafe',ok:'#d1fae5',bad:'#fee2e2',inc:'#ffedd5',manual:'#f3f4f6'}[kind]||'#f3f4f6';
@@ -551,7 +551,7 @@ async function startStation(){
     if(!navigator.mediaDevices?.getUserMedia)throw new Error('Este navegador não disponibiliza acesso à câmera. Use Chrome ou Edge atualizado.');
     station.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
     $('stationVideo').srcObject=station.stream;$('stationVideo').classList.remove('hide');
-    station.active=true;station.phase='waiting';station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
+    station.active=true;station.phase='waiting';station.startedAt=station.startedAt||Date.now();station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
     $('stationStart').classList.add('hide');$('stationStop').classList.remove('hide');
     setStationState('🟡 COLOQUE O PRODUTO NA BALANÇA','wait');
     $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando balança';
@@ -584,7 +584,7 @@ async function stationAnalyzeStableWeight(measured){
     }
     if(cfg.required&&(measured<cfg.min||measured>cfg.max)){
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_reprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g`});
-      station.retryCount++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
+      station.retryCount++;station.rejectedAttempts++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
       setStationState('🔴 PESO INCORRETO — RETIRE E TENTE NOVAMENTE','bad');station.awaitZero=true;station.processing=false;
       if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
       return;
@@ -614,7 +614,7 @@ async function stationAnalyzeStableWeight(measured){
           station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&station.pendingApproval)feedStationWeight(0)},1200);
         }
       }else{
-        station.pendingApproval=null;station.retryCount++;updateStationCycle();
+        station.pendingApproval=null;station.retryCount++;station.rejectedAttempts++;updateStationCycle();
         const et=(window.__lastVerifyResult?.error_type||'inconclusivo');
         const stationMsg=et==='modelo'?'🔴 MODELO / ESPECIFICAÇÃO INCORRETA — RETIRE':et==='quantidade'?'🔴 QUANTIDADE INCORRETA — RETIRE':et==='marca'?'🔴 MARCA INCORRETA — RETIRE':et==='produto'?'🔴 PRODUTO INCORRETO — RETIRE':'🟠 NÃO FOI POSSÍVEL CONFIRMAR — RETIRE E TENTE NOVAMENTE';
         setStationState(stationMsg,et==='inconclusivo'?'inc':'bad');
@@ -644,6 +644,7 @@ function feedStationWeight(g){
       station.pendingApproval=null;station.awaitZero=false;station.weights=[];station.stableSince=0;
       if(pending){
         setStationState('🟢 PRODUTO RETIRADO — FINALIZANDO ITEM...','ok');
+        station.approvedLots++;
         station.processing=true;
         finishApprovedBatch(pending.x,pending.batchQty).then(()=>{
           station.processing=false;station.weights=[];station.lastTriggerAt=0;
@@ -696,6 +697,17 @@ async function readScaleSerial(){
   }
   try{scaleReader.releaseLock()}catch{}
 }
+function formatElapsed(ms){
+  const s=Math.max(0,Math.round(ms/1000)),m=Math.floor(s/60),r=s%60;
+  return m?`${m} min ${r} s`:`${r} s`;
+}
+function showStationComplete(){
+  const elapsed=station.startedAt?formatElapsed(Date.now()-station.startedAt):'—';
+  $('stationCompleteOrder').textContent=currentOrder?.numero?`Pedido ${currentOrder.numero}`:'Pedido finalizado';
+  $('stationCompleteStats').innerHTML=`<b>Operador:</b> ${esc(profile?.nome||session?.user?.email||'—')}<br><b>Itens do pedido:</b> ${items.length}<br><b>Lotes aprovados:</b> ${station.approvedLots}<br><b>Tentativas reprovadas/inconclusivas:</b> ${station.rejectedAttempts}<br><b>Tempo de conferência:</b> ${esc(elapsed)}`;
+  stopStation();
+  show('stationComplete');
+}
 async function finishApprovedBatch(x,batchQty){
   itemConfirmed+=batchQty;const finished=itemConfirmed>=x.quantidade;
   await db.from('order_items').update({quantidade_conferida:itemConfirmed,status:finished?'aprovado':'em_conferencia'}).eq('id',x.id);
@@ -703,7 +715,7 @@ async function finishApprovedBatch(x,batchQty){
   if(!finished){renderPick();$('result').innerHTML=`<div class="ok"><b>Lote aprovado.</b> ${itemConfirmed} de ${x.quantidade} unidades conferidas. Separe o próximo lote.</div>`;return}
   i++;while(i<items.length&&items[i].status==='aprovado')i++;
   if(i<items.length){itemConfirmed=items[i].quantidade_conferida||0;renderPick()}
-  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:'Todos os itens foram aprovados.'});alert('PEDIDO CONFERIDO! Todos os itens foram aprovados.');show('dashboard');loadDashboard()}
+  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:`Todos os itens aprovados. Lotes: ${station.approvedLots}. Tentativas reprovadas/inconclusivas: ${station.rejectedAttempts}.`});showStationComplete()}
 }
 
 async function loadReferenceForPick(ref){
@@ -737,6 +749,7 @@ const reasonTitle=dbStatus==='aprovado'?'APROVADO':d.error_type==='modelo'?'MODE
 const markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');const evidence=Array.isArray(d.positive_evidence)&&d.positive_evidence.length?d.positive_evidence.join(' • '):'—';
 const contradictions=Array.isArray(d.contradictions)&&d.contradictions.length?d.contradictions.join(' • '):'Nenhuma';
 $('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br><b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* estação conclui somente após retorno a zero */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
+if($('stationCompleteBack'))$('stationCompleteBack').onclick=()=>{station.startedAt=null;station.approvedLots=0;station.rejectedAttempts=0;show('dashboard');loadDashboard()};
 if($('stationStart'))$('stationStart').onclick=startStation;
 if($('stationOperationMode'))$('stationOperationMode').onclick=()=>setOperationMode(true);
 if($('stationEmergencyManual'))$('stationEmergencyManual').onclick=()=>setOperationMode(false);
