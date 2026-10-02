@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.9.1</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.9.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -217,6 +217,16 @@ body.station-operation #stationPanel{border-width:3px!important}
 .team-card.no-work{border-left-color:#b7c7ce}
 @media(max-width:760px){.order-tools{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.team-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:500px){.order-tools{grid-template-columns:1fr}.search-wrap{grid-column:auto}.team-grid{grid-template-columns:1fr}}
+
+/* V8.9.2 cronômetro de pedidos */
+.order-timer{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;border-radius:7px;background:#f1f8fb;color:#075f86;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.order-timer.done{background:#edf8f1;color:#187346}
+.history-timing{margin-bottom:14px;padding:14px;border:1px solid #cfe5ee;border-left:4px solid var(--proelis-blue);border-radius:9px;background:#f8fcfd}
+.history-timing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.history-time-cell{background:#fff;border:1px solid #dcebf0;border-radius:7px;padding:9px}
+.history-time-cell small{display:block;color:#6a7e88;font-size:10px;text-transform:uppercase;font-weight:800}
+.history-time-cell b{display:block;margin-top:3px}
+@media(max-width:620px){.history-timing-grid{grid-template-columns:1fr}.order-timer{display:flex;width:max-content}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -224,7 +234,7 @@ body.station-operation #stationPanel{border-width:3px!important}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V8.9.1</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V8.9.2</span></div>
   </div>
 </header><div class="w">
 
@@ -425,6 +435,27 @@ function orderCompletionDate(o){
   const raw=o.completed_at||o.concluido_em||o.finished_at||o.updated_at||'';
   return String(raw).slice(0,10);
 }
+function orderStartTime(o){return o?.created_at?new Date(o.created_at).getTime():null}
+function orderEndTime(o){const raw=o?.completed_at||o?.concluido_em||o?.finished_at;return raw?new Date(raw).getTime():null}
+function formatOrderDuration(ms){
+  if(!Number.isFinite(ms)||ms<0)return '—';
+  const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(h>=24){const d=Math.floor(h/24),rh=h%24;return `${d}d ${String(rh).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function orderElapsed(o,now=Date.now()){
+  const st=orderStartTime(o);if(!st)return null;
+  const en=o.status==='concluido'?(orderEndTime(o)||new Date(o.updated_at||now).getTime()):now;
+  return Math.max(0,en-st);
+}
+let dashboardTimerInterval=null;
+function refreshOrderTimers(){
+  document.querySelectorAll('[data-order-timer]').forEach(el=>{
+    const o=dashboardOrders.find(x=>String(x.id)===String(el.dataset.orderTimer));
+    if(o)el.textContent=(o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: ')+formatOrderDuration(orderElapsed(o));
+  });
+}
+
 function renderDashboardOrders(){
   const search=($('orderSearch')?.value||'').trim().toLowerCase();
   const sep=$('separatorFilter')?.value||'';
@@ -434,10 +465,13 @@ function renderDashboardOrders(){
     return (!search||hay.includes(search))&&(!sep||String(o.assigned_to||'')===sep)&&(!status||o.status===status);
   });
   $('orderFilterCount').textContent=`Exibindo ${rows.length} de ${dashboardOrders.length} pedido${dashboardOrders.length===1?'':'s'}`;
-  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div></div><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
+  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));
   document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));
   document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history));
+  refreshOrderTimers();
+  if(dashboardTimerInterval)clearInterval(dashboardTimerInterval);
+  dashboardTimerInterval=setInterval(refreshOrderTimers,1000);
 }
 function renderTeamOverview(){
   if(profile.role!=='admin'){ $('teamOverview').classList.add('hide'); return; }
@@ -580,6 +614,7 @@ async function openHistory(orderId){
   if(ie)return alert(ie.message);
   const {data:ats,error:ae}=await db.from('verification_attempts').select('*').eq('order_id',orderId).order('created_at',{ascending:true});
   if(ae)return alert(ae.message);
+  const {data:evs}=await db.from('order_events').select('*').eq('order_id',orderId).order('created_at',{ascending:true});
   const userIds=[...new Set((ats||[]).map(a=>a.user_id).filter(Boolean))];
   let userMap={};
   if(userIds.length){
@@ -589,8 +624,13 @@ async function openHistory(orderId){
   const itemMap={};(its||[]).forEach(x=>itemMap[x.id]=x);
   $('historyTitle').textContent='Venda '+o.numero_venda+' — Histórico';
   $('historyMeta').textContent=(o.cliente||'')+' • '+statusLabel(o.status);
+  const startAt=o.created_at?new Date(o.created_at):null;
+  const endRaw=o.completed_at||o.concluido_em||o.finished_at||null;
+  const endAt=endRaw?new Date(endRaw):null;
+  const totalMs=startAt?Math.max(0,(endAt?endAt.getTime():Date.now())-startAt.getTime()):null;
+  const timing=`<div class="history-timing"><b>⏱ TEMPO DO PEDIDO</b><div class="history-timing-grid"><div class="history-time-cell"><small>Enviado pelo administrador</small><b>${startAt?esc(startAt.toLocaleString('pt-BR')):'—'}</b></div><div class="history-time-cell"><small>Finalizado</small><b>${endAt?esc(endAt.toLocaleString('pt-BR')):(o.status==='concluido'?'—':'Em andamento')}</b></div><div class="history-time-cell"><small>${o.status==='concluido'?'Tempo total':'Tempo decorrido'}</small><b>${esc(formatOrderDuration(totalMs))}</b></div></div></div>`;
   if(!(ats||[]).length){
-    $('historyList').innerHTML='<p class="muted">Ainda não há tentativas de conferência neste pedido.</p>';
+    $('historyList').innerHTML=timing+'<p class="muted">Ainda não há tentativas de conferência neste pedido.</p>';
     show('history');return;
   }
   const cards=[];
@@ -611,7 +651,7 @@ async function openHistory(orderId){
       <div><b>Motivo:</b> ${esc(a.motivo||'—')}</div>${photo}
     </div>`);
   }
-  $('historyList').innerHTML=cards.join('');
+  $('historyList').innerHTML=timing+cards.join('');
   show('history');
 }
 
@@ -1107,7 +1147,7 @@ async function finishApprovedBatch(x,batchQty){
   if(!finished){renderPick();$('result').innerHTML=`<div class="ok"><b>Lote aprovado.</b> ${itemConfirmed} de ${x.quantidade} unidades conferidas. Separe o próximo lote.</div>`;return}
   i++;while(i<items.length&&items[i].status==='aprovado')i++;
   if(i<items.length){itemConfirmed=items[i].quantidade_conferida||0;renderPick()}
-  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:`Todos os itens aprovados. Lotes: ${station.approvedLots}. Tentativas reprovadas/inconclusivas: ${station.rejectedAttempts}.`});showStationComplete()}
+  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);const finishedAt=new Date();const totalMs=currentOrder?.created_at?Math.max(0,finishedAt.getTime()-new Date(currentOrder.created_at).getTime()):null;await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:`Todos os itens aprovados. Tempo total desde o envio pelo administrador: ${formatOrderDuration(totalMs)}. Lotes: ${station.approvedLots}. Tentativas reprovadas/inconclusivas: ${station.rejectedAttempts}.`});showStationComplete()}
 }
 
 async function loadReferenceForPick(ref){
