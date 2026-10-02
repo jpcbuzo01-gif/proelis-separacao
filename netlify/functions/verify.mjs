@@ -28,19 +28,27 @@ function extractJSON(text){
 
 
 
-function idTokens(v){
-  const s=upper(v).replace(/[^A-Z0-9]+/g," ");
-  // Product identifiers: numeric/alphanumeric tokens that are useful to distinguish variants.
-  return [...new Set(s.split(/\s+/).filter(t=>t && (/\d/.test(t)) && t.length>=3))];
+function techTokens(v){
+  return upper(v).replace(/[^A-Z0-9]+/g," ").split(/\s+/).filter(Boolean);
 }
-function identifiersConflict(expectedValue,identifiedValue){
-  const e=idTokens(expectedValue), a=idTokens(identifiedValue);
-  if(!e.length || !a.length) return false;
-  // If they share at least one decisive identifier, do not reject just because descriptions differ
-  // (ex. "6200 2RS DDU C3" vs "6200 2RS C3").
-  if(e.some(x=>a.includes(x))) return false;
-  // Different same-shaped numeric/model identifiers are a real contradiction (6200 vs 6201, 30UF vs 25UF, etc).
-  return true;
+function primaryTechnicalId(v){
+  const ignore=new Set(["2RS","DDU","ZZ","C3","C4","RS","Z"]);
+  const toks=techTokens(v).filter(t=>!ignore.has(t));
+  // Prefer a 4+ digit model number (6200/6201 etc), then alphanumeric code containing digits.
+  return toks.find(t=>/^\d{4,}$/.test(t))
+      || toks.find(t=>/[A-Z]/.test(t)&&/\d/.test(t)&&t.length>=3)
+      || toks.find(t=>/^\d{3,}$/.test(t))
+      || null;
+}
+function explicitTechnicalIds(values){
+  const out=[];
+  for(const value of values||[]){
+    const toks=techTokens(value);
+    for(const t of toks){
+      if(/^\d{4,}$/.test(t) || (/[A-Z]/.test(t)&&/\d/.test(t)&&t.length>=3)) out.push(t);
+    }
+  }
+  return [...new Set(out)];
 }
 function meaningful(v){
   const x=upper(v);
@@ -126,6 +134,8 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - Se ela estiver claramente visível e compatível, isso é evidência forte para APROVAR, mesmo que outros textos secundários estejam pequenos ou parcialmente ilegíveis.
 - Se a característica decisiva não estiver legível e existirem variantes visualmente indistinguíveis, responda INCONCLUSIVO. Nunca invente a variante.
 - Se aparecer uma característica incompatível com o esperado, responda REPROVADO.
+- MUITO IMPORTANTE: transcreva em visible_markings EXATAMENTE os códigos/modelos realmente legíveis na FOTO DO SEPARADOR. Não copie o modelo esperado para identified_model se ele não estiver legível na foto.
+- Se a foto mostrar explicitamente um código técnico diferente do esperado (ex.: 6200 quando esperado 6201), isso domina qualquer semelhança visual/foto oficial e deve ser REPROVADO.
 - A FOTO OFICIAL ajuda a localizar características e reconhecer o produto, mas diferença estética isolada não reprova.
 - O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
 - Quantidade deve corresponder ao lote solicitado quando for possível contar com segurança.
@@ -213,11 +223,25 @@ Responda APENAS JSON válido:
 
     // Se existe modelo/código oficial significativo e a IA identificou outro, força reprovação,
     // inclusive quando o modelo tentou responder APROVADO.
-    if(meaningful(expected.model) && meaningful(d.identified_model) &&
-       identifiersConflict(expected.model,d.identified_model)){
+    const expectedPrimary=primaryTechnicalId(expected.model)||primaryTechnicalId(expected.description);
+    const seenIds=explicitTechnicalIds([d.identified_model,...d.visible_markings,d.decisive_attribute_seen,...d.positive_evidence,...d.contradictions]);
+    const conflictingSeen=expectedPrimary?seenIds.find(x=>x!==expectedPrimary && /^\d{4,}$/.test(x) && /^\d{4,}$/.test(expectedPrimary)):null;
+
+    // V8.4.2: código técnico EXPLICITAMENTE LIDO na foto vence a inferência da IA.
+    // Ex.: esperado 6201 e visible_markings contém 6200 => REPROVADO, mesmo que identified_model diga 6201.
+    if(conflictingSeen){
       d.status="REPROVADO";
       d.error_type="modelo";
-      d.reason=`Modelo/código identificado (${d.identified_model}) incompatível com o esperado (${expected.model}). ${norm(d.reason)}`.trim();
+      d.reason=`Código técnico visível (${conflictingSeen}) incompatível com o esperado (${expectedPrimary}). ${norm(d.reason)}`.trim();
+      d.detected_conflicting_code=conflictingSeen;
+    } else if(meaningful(expected.model) && meaningful(d.identified_model)){
+      const identifiedPrimary=primaryTechnicalId(d.identified_model);
+      if(expectedPrimary && identifiedPrimary && expectedPrimary!==identifiedPrimary){
+        d.status="REPROVADO";
+        d.error_type="modelo";
+        d.reason=`Modelo/código identificado (${identifiedPrimary}) incompatível com o esperado (${expectedPrimary}). ${norm(d.reason)}`.trim();
+        d.detected_conflicting_code=identifiedPrimary;
+      }
     }
 
     // APROVADO sem nenhuma evidência positiva declarada vira INCONCLUSIVO.
@@ -228,8 +252,7 @@ Responda APENAS JSON válido:
     }
 
     // Deterministic consistency guard: model mismatch always classifies as modelo.
-    if(d.status==="REPROVADO" && expected.model && d.identified_model &&
-       identifiersConflict(expected.model,d.identified_model)){
+    if(d.status==="REPROVADO" && d.error_type==="modelo"){
       d.error_type="modelo";
     } else if(d.status==="REPROVADO" && expected.brand && d.identified_brand &&
        upper(expected.brand)!==upper(d.identified_brand)){
@@ -243,7 +266,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="balanced_universal_v8_4_1";
+    d.validation_policy="explicit_code_guard_v8_4_2";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
