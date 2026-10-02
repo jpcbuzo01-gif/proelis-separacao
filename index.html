@@ -112,7 +112,17 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
    <div id="historyList" class="c"></div>
  </section>
 
- <section id="picking" class="view hide">
+ <section id="stationComplete" class="view hide">
+  <div class="c" style="text-align:center;border:4px solid #22a447;padding:28px">
+    <div style="font-size:54px">✓</div>
+    <h1 style="margin:6px 0">PEDIDO CONFERIDO</h1>
+    <div id="stationCompleteOrder" style="font-size:22px;font-weight:800"></div>
+    <div id="stationCompleteStats" class="reference-box" style="margin-top:16px;text-align:left"></div>
+    <button id="stationCompleteBack" style="margin-top:16px">VOLTAR AOS PEDIDOS</button>
+  </div>
+</section>
+
+<section id="picking" class="view hide">
   <div class="c top"><div><b id="pickOrder"></b><div class="who" id="pickClient"></div></div><button id="backDash" class="secondary">VOLTAR</button></div>
   <div id="itemCard" class="c"><b id="step"></b><div class="bar"><i id="prog"></i></div><p class="muted">Separe somente este item.</p><div class="ref" id="ref"></div><h2 id="desc"></h2><p>Marca: <b id="brand"></b> • Modelo: <b id="model"></b></p><div class="qty" id="qty"></div>
   <div id="catalogReference" class="reference-box hide">
@@ -703,10 +713,11 @@ function formatElapsed(ms){
 }
 function showStationComplete(){
   const elapsed=station.startedAt?formatElapsed(Date.now()-station.startedAt):'—';
-  $('stationCompleteOrder').textContent=currentOrder?.numero?`Pedido ${currentOrder.numero}`:'Pedido finalizado';
-  $('stationCompleteStats').innerHTML=`<b>Operador:</b> ${esc(profile?.nome||session?.user?.email||'—')}<br><b>Itens do pedido:</b> ${items.length}<br><b>Lotes aprovados:</b> ${station.approvedLots}<br><b>Tentativas reprovadas/inconclusivas:</b> ${station.rejectedAttempts}<br><b>Tempo de conferência:</b> ${esc(elapsed)}`;
   stopStation();
-  show('stationComplete');
+  const orderEl=$('stationCompleteOrder'),statsEl=$('stationCompleteStats');
+  if(orderEl)orderEl.textContent=currentOrder?.numero?`Pedido ${currentOrder.numero}`:'Pedido finalizado';
+  if(statsEl)statsEl.innerHTML=`<b>Operador:</b> ${esc(profile?.nome||session?.user?.email||'—')}<br><b>Itens do pedido:</b> ${items.length}<br><b>Lotes aprovados:</b> ${station.approvedLots}<br><b>Tentativas reprovadas/inconclusivas:</b> ${station.rejectedAttempts}<br><b>Tempo de conferência:</b> ${esc(elapsed)}`;
+  if($('stationComplete'))show('stationComplete');else{show('dashboard');loadDashboard()}
 }
 async function finishApprovedBatch(x,batchQty){
   itemConfirmed+=batchQty;const finished=itemConfirmed>=x.quantidade;
