@@ -14,7 +14,7 @@ body.station-operation #qty{font-size:clamp(28px,6vw,50px)}
 .station-opbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.station-opbar button{flex:1;min-width:150px}
 #stationLast{margin-top:10px;font-weight:700}
 </style></head><body>
-<header><span class="y">PROELIS</span> • Separação Inteligente V8.2</header><div class="w">
+<header><span class="y">PROELIS</span> • Separação Inteligente V8.2.1</header><div class="w">
 
 <div id="loading" class="c">Carregando sistema...</div>
 
@@ -596,6 +596,7 @@ async function stationAnalyzeStableWeight(measured){
       if(visualApproved&&(!cfg.required||weightApproved)){
         station.pendingApproval={x,batchQty};stationLast(`REF. ${x.referencia} • aprovado • ${measured.toFixed(1)} g`);
         setStationState('🟢 CORRETO — RETIRE O PRODUTO','ok');
+        if($('stationScaleStatus'))$('stationScaleStatus').innerHTML='<b>Produto aprovado.</b> Na simulação, clique em SIMULAR RETIRADA / ZERO para concluir o item.';
         station.awaitZero=true;
       }else{
         station.pendingApproval=null;
@@ -620,10 +621,20 @@ function feedStationWeight(g){
       const pending=station.pendingApproval;
       station.pendingApproval=null;station.awaitZero=false;station.weights=[];station.stableSince=0;
       if(pending){
-        setStationState('🟢 PRODUTO RETIRADO — AVANÇANDO...','ok');
+        setStationState('🟢 PRODUTO RETIRADO — FINALIZANDO ITEM...','ok');
+        station.processing=true;
         finishApprovedBatch(pending.x,pending.batchQty).then(()=>{
-          if(station.active)setStationState('🟡 COLOQUE O PRÓXIMO PRODUTO NA BALANÇA','wait');
-        }).catch(e=>{setStationState('🟠 ERRO AO AVANÇAR','inc');if($('stationSensors'))$('stationSensors').textContent=e.message||String(e)});
+          station.processing=false;
+          if(station.active && currentOrder && items[i]){
+            station.weights=[];station.lastTriggerAt=0;
+            if($('stationScaleStatus'))$('stationScaleStatus').textContent='MODO SIMULAÇÃO • aguardando próximo produto.';
+            setStationState('🟡 COLOQUE O PRÓXIMO PRODUTO NA BALANÇA','wait');
+          }
+        }).catch(e=>{
+          station.processing=false;
+          setStationState('🟠 ERRO AO FINALIZAR ITEM','inc');
+          if($('stationSensors'))$('stationSensors').textContent=e.message||String(e)
+        });
       }else setStationState('🟡 COLOQUE O PRODUTO NA BALANÇA','wait');
     }
     return;
@@ -712,7 +723,9 @@ if($('stationSimApply'))$('stationSimApply').onclick=()=>{
 };
 if($('stationSimZero'))$('stationSimZero').onclick=()=>{
   if(!station.active)return alert('Primeiro clique em INICIAR ESTAÇÃO.');
-  feedStationWeight(0);feedStationWeight(0);
+  clearInterval(station.simTimer);
+  if(!station.awaitZero)return alert('Aguarde a análise terminar e aparecer RETIRE O PRODUTO.');
+  feedStationWeight(0);
 };
 
 if($('stationStop'))$('stationStop').onclick=stopStation;
