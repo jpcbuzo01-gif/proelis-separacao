@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.9</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V8.9.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -224,7 +224,7 @@ body.station-operation #stationPanel{border-width:3px!important}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V8.9</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V8.9.1</span></div>
   </div>
 </header><div class="w">
 
@@ -278,6 +278,7 @@ body.station-operation #stationPanel{border-width:3px!important}
       <div><input id="catalogCsvFile" type="file" accept=".csv,text/csv" style="display:none"><button id="importCatalogBtn" class="secondary">IMPORTAR CADASTRO DE PRODUTOS</button> <button id="syncPhotosBtn" class="secondary">COPIAR FOTOS DO CATÁLOGO</button> <button id="syncCatalogBtn" class="secondary">SINCRONIZAR CATÁLOGO PROELIS</button> <button id="newProductBtn">+ NOVO PRODUTO</button></div>
     </div>
     <div id="catalogSyncMsg"></div><input id="catalogSearch" placeholder="Buscar por referência, nome, marca ou modelo">
+    <div id="catalogCount" class="small muted" style="margin:8px 2px 12px"></div>
     <div id="catalogList"></div>
   </div>
   <div id="productEditor" class="c hide">
@@ -731,18 +732,41 @@ async function syncWholeCatalog(){
 
 async function loadCatalog(){
   if(profile.role!=='admin')return;
-  $('catalogList').innerHTML='<p class="muted">Carregando catálogo...</p>';
-  const {data,error}=await db.from('products').select('*').order('referencia');
-  if(error){$('catalogList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}
-  catalogProducts=data||[];
-  renderCatalogList();
+  $('catalogList').innerHTML='<p class="muted">Carregando catálogo completo...</p>';
+  if($('catalogCount'))$('catalogCount').textContent='Buscando todos os produtos cadastrados...';
+  try{
+    const all=[];
+    const STEP=1000;
+    let from=0;
+    while(true){
+      const {data,error}=await db.from('products').select('*').order('referencia').range(from,from+STEP-1);
+      if(error)throw error;
+      const part=data||[];
+      all.push(...part);
+      if($('catalogCount'))$('catalogCount').textContent=`Carregando catálogo: ${all.length} produto${all.length===1?'':'s'}...`;
+      if(part.length<STEP)break;
+      from+=STEP;
+      if(from>50000)throw new Error('O catálogo excedeu o limite de segurança da consulta.');
+    }
+    catalogProducts=all;
+    renderCatalogList();
+  }catch(error){
+    $('catalogList').innerHTML=`<div class="err">${esc(error.message||error)}</div>`;
+    if($('catalogCount'))$('catalogCount').textContent='';
+  }
 }
 function renderCatalogList(){
   const q=($('catalogSearch').value||'').trim().toLowerCase();
-  const rows=catalogProducts.filter(p=>!q||[p.referencia,p.nome,p.marca,p.modelo].some(v=>String(v||'').toLowerCase().includes(q)));
+  const rows=catalogProducts.filter(p=>!q||[p.referencia,p.nome,p.marca,p.modelo,p.categoria].some(v=>String(v||'').toLowerCase().includes(q)));
+  if($('catalogCount')){
+    $('catalogCount').innerHTML=q
+      ? `<b>${rows.length}</b> encontrado${rows.length===1?'':'s'} • ${catalogProducts.length} produtos carregados no catálogo`
+      : `<b>${catalogProducts.length}</b> produtos carregados no catálogo`;
+  }
   $('catalogList').innerHTML=rows.length?rows.map(p=>`<div class="catalog-card"><div class="top"><div><b>REF. ${esc(p.referencia)} — ${esc(p.nome)}</b><div class="small">${esc(p.marca||'')} ${esc(p.modelo||'')} • ${p.ativo?'Ativo':'Inativo'}${p.medidas?' • '+esc(p.medidas):''}</div></div><button class="secondary" data-edit-product="${p.id}">EDITAR</button></div></div>`).join(''):'<p class="muted">Nenhum produto encontrado.</p>';
   document.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(b.dataset.editProduct));
 }
+
 function clearProductEditor(){
   editingProduct=null;
   ['productId','pRef','pName','pCategory','pSubcategory','pBrand','pManufacturer','pModel','pManufacturerCode','pWeight','pWeightTolerance','pMeasures','pLocation','pSourceUrl','pDescription','pNotes'].forEach(id=>$(id).value='');
