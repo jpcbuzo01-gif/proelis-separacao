@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.8</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.9</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -328,6 +328,13 @@ body.station-operation #stationConfigDetails{display:none}
 .management-table td b{color:#173f51}
 #managementDashboard{overflow-x:auto}
 @media(max-width:850px){.management-table{min-width:900px}}
+
+/* V9.9 período personalizado */
+.station-custom-dates{display:flex;gap:6px;align-items:end}
+.station-custom-dates label{font-size:10px;font-weight:800;color:#52707e}
+.station-custom-dates input{display:block;margin-top:3px;min-width:132px}
+.station-metric-tools:has(#stationCustomDates:not(.hide)){grid-template-columns:150px auto 1fr auto}
+@media(max-width:850px){.station-metric-tools:has(#stationCustomDates:not(.hide)){grid-template-columns:1fr}.station-custom-dates{width:100%}.station-custom-dates label{flex:1}.station-custom-dates input{width:100%;min-width:0}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -335,7 +342,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.8</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.9</span></div>
   </div>
 </header><div class="w">
 
@@ -438,7 +445,11 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="section-kicker">PRODUTIVIDADE DA ESTAÇÃO</div><div class="small muted" style="margin-top:3px">Dados centralizados no Supabase • fallback local automático</div>
       <div id="stationMetricsSummary" class="grid"></div>
       <div class="station-metric-tools">
-        <select id="stationMetricPeriod"><option value="today">Hoje</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="all">Todo período</option></select>
+        <select id="stationMetricPeriod"><option value="today">Hoje</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="custom">Personalizado</option><option value="all">Todo período</option></select>
+        <div id="stationCustomDates" class="station-custom-dates hide">
+          <label>De <input id="stationDateFrom" type="date"></label>
+          <label>Até <input id="stationDateTo" type="date"></label>
+        </div>
         <input id="stationMetricSearch" type="search" placeholder="Venda ou operador">
         <button id="stationMetricExport" class="secondary" type="button">EXPORTAR CSV</button>
       </div>
@@ -706,18 +717,22 @@ function renderManagementDashboard(){
   target.innerHTML=rows.length?`<table class="management-table"><thead><tr><th>Separador</th><th>Pedidos</th><th>Tempo médio</th><th>Lotes</th><th>Aprovados</th><th>Erros evitados</th><th>Inconclusivos</th><th>Taxa de erro*</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.sessions}</td><td>${r.sessions?esc(formatOrderDuration(r.avg)):'—'}</td><td>${r.lots}</td><td>${r.approved}</td><td>${r.rejected}</td><td>${r.inconclusive}</td><td><b>${r.rate.toFixed(1)}%</b></td></tr>`).join('')}</tbody></table><p class="small muted">* Produtividade e qualidade respeitam o mesmo filtro de período selecionado.</p>`:'<p class="muted">Ainda não há dados para o dashboard gerencial.</p>';
 }
 
-function metricPeriodStart(){
+function metricPeriodRange(){
   const period=$('stationMetricPeriod')?.value||'today',now=new Date();
-  if(period==='today')return new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
-  if(period!=='all')return Date.now()-Number(period)*86400000;
-  return null;
+  if(period==='today')return {from:new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),to:null};
+  if(period==='custom'){
+    const f=$('stationDateFrom')?.value,t=$('stationDateTo')?.value;
+    return {from:f?new Date(f+'T00:00:00').getTime():null,to:t?new Date(t+'T23:59:59.999').getTime():null};
+  }
+  if(period!=='all')return {from:Date.now()-Number(period)*86400000,to:null};
+  return {from:null,to:null};
 }
 function qualityAttemptsForSelectedPeriod(attempts){
-  const since=metricPeriodStart();
-  return (attempts||[]).filter(a=>!since||new Date(a.created_at).getTime()>=since);
+  const {from,to}=metricPeriodRange();
+  return (attempts||[]).filter(a=>{const t=new Date(a.created_at).getTime();return (!from||t>=from)&&(!to||t<=to)});
 }
 async function loadMetrics(){await loadCentralStationMetrics();renderStationMetrics();
-  if($('qualityPeriodLabel')){const p=$('stationMetricPeriod')?.value||'today',labels={today:'Período: Hoje','7':'Período: Últimos 7 dias','30':'Período: Últimos 30 dias',all:'Período: Todo o histórico'};$('qualityPeriodLabel').textContent=labels[p]||'';}
+  if($('qualityPeriodLabel')){const p=$('stationMetricPeriod')?.value||'today',labels={today:'Período: Hoje','7':'Período: Últimos 7 dias','30':'Período: Últimos 30 dias',custom:'Período: Personalizado',all:'Período: Todo o histórico'};$('qualityPeriodLabel').textContent=labels[p]||'';}
   if(profile.role!=='admin')return;
   $('metricsSummary').innerHTML='<div class="muted">Carregando indicadores...</div>';
   $('metricsUsers').innerHTML='';
@@ -1224,12 +1239,10 @@ async function stationMetricFinish(){
 }
 function filteredStationMetricRows(){
   const period=$('stationMetricPeriod')?.value||'today',q=($('stationMetricSearch')?.value||'').trim().toLowerCase(),now=new Date();
-  let since=null;
-  if(period==='today'){since=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()}
-  else if(period!=='all'){since=Date.now()-Number(period)*86400000}
+  const range=metricPeriodRange();
   return stationMetricRows().filter(r=>{
     const t=new Date(r.startedAt).getTime(),hay=[r.numero,r.operator].filter(Boolean).join(' ').toLowerCase();
-    return (!since||t>=since)&&(!q||hay.includes(q));
+    return (!range.from||t>=range.from)&&(!range.to||t<=range.to)&&(!q||hay.includes(q));
   });
 }
 function renderStationMetrics(){
@@ -1603,9 +1616,17 @@ if($('confirmWeight'))$('confirmWeight').onclick=async()=>{
 };
 
 if($('refreshMetrics'))$('refreshMetrics').onclick=loadMetrics;
-if($('stationMetricPeriod'))$('stationMetricPeriod').onchange=async()=>{renderStationMetrics();await loadMetrics()};
+if($('stationMetricPeriod'))$('stationMetricPeriod').onchange=async()=>{
+  $('stationCustomDates')?.classList.toggle('hide',$('stationMetricPeriod').value!=='custom');
+  renderStationMetrics();await loadMetrics()
+};
+for(const id of ['stationDateFrom','stationDateTo'])if($(id))$(id).onchange=async()=>{if($('stationMetricPeriod')?.value==='custom'){renderStationMetrics();await loadMetrics()}};
 if($('stationMetricSearch'))$('stationMetricSearch').oninput=()=>{renderStationMetrics();renderManagementDashboard()};
 if($('stationMetricExport'))$('stationMetricExport').onclick=exportStationMetricsCsv;
+if($('stationDateFrom')&&!$('stationDateFrom').value)$('stationDateFrom').value=new Date().toISOString().slice(0,10);
+if($('stationDateTo')&&!$('stationDateTo').value)$('stationDateTo').value=new Date().toISOString().slice(0,10);
+if($('stationCustomDates')&&$('stationMetricPeriod'))$('stationCustomDates').classList.toggle('hide',$('stationMetricPeriod').value!=='custom');
+
 if($('newUserBtn'))$('newUserBtn').onclick=()=>{$('newUserForm').classList.remove('hide');$('newUserMsg').textContent=''};if($('cancelUserBtn'))$('cancelUserBtn').onclick=()=>$('newUserForm').classList.add('hide');if($('createUserBtn'))$('createUserBtn').onclick=createManagedUser;
 if($('catalogSearch'))$('catalogSearch').oninput=renderCatalogList;
 if($('newProductBtn'))$('newProductBtn').onclick=()=>openProductEditor();
