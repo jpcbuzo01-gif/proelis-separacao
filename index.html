@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.5</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.7</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -200,7 +200,7 @@ body.station-operation #stationPanel{border-width:3px!important}
 
 /* V8.9 busca, filtros e visão rápida da equipe */
 .section-kicker{font-size:11px;font-weight:900;letter-spacing:1px;color:var(--proelis-blue)}
-.order-tools{display:grid;grid-template-columns:minmax(230px,1fr) 190px 155px 190px auto;gap:9px;margin:15px 0 5px;align-items:center}
+.order-tools{display:grid;grid-template-columns:minmax(220px,1.35fr) minmax(155px,.72fr) minmax(145px,.62fr) minmax(165px,.72fr) auto;gap:8px;margin:15px 0 5px;align-items:center}
 .order-tools input,.order-tools select{margin:0;height:44px}
 .search-wrap{position:relative;margin:0}
 .search-wrap span{position:absolute;left:13px;top:9px;font-size:22px;color:#6d8793;z-index:1}
@@ -215,8 +215,9 @@ body.station-operation #stationPanel{border-width:3px!important}
 .team-metric b{display:block;font-size:23px;color:#0878ad;margin-top:2px}
 .team-metric.done b{color:#1b8250}
 .team-card.no-work{border-left-color:#b7c7ce}
+@media(max-width:1050px){.order-tools{grid-template-columns:minmax(260px,1fr) 1fr 1fr}.search-wrap{grid-column:1/-1}#clearOrderFilters{width:100%}}
 @media(max-width:760px){.order-tools{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.team-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:500px){.order-tools{grid-template-columns:1fr}.search-wrap{grid-column:auto}.team-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.order-tools{grid-template-columns:1fr}.search-wrap,#orderSort{grid-column:auto}.team-grid{grid-template-columns:1fr}}
 
 /* V8.9.2 cronômetro de pedidos */
 .order-timer{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;border-radius:7px;background:#f1f8fb;color:#075f86;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -382,6 +383,24 @@ body.station-operation #stationConfigDetails{display:none}
 .priority-badge{font-size:9px;font-weight:900;letter-spacing:.04em;padding:5px 7px;border-radius:999px;background:#fff4d6;color:#7b5900;border:1px solid #e9cd7d}
 .priority-badge.urgent{background:#fff0ee;color:#b42318;border-color:#efb7b1}
 @media(max-width:760px){.order-status-stack{align-items:flex-start}}
+
+/* V10.6 distribuição de carga */
+.assignee-recommendation{margin:-4px 0 12px;padding:9px 11px;border-radius:8px;background:#f2f9fc;border:1px solid #d2e8f1;color:#355865;font-size:11px}
+.assignee-recommendation b{color:#0878ad}.assignee-recommendation span{color:#71828a}
+
+/* V10.7 carga visual da equipe */
+.team-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.team-card-head .team-name{margin-bottom:0}
+.team-numbers-3{grid-template-columns:repeat(3,1fr)}
+.team-metric.waiting b{color:#b77900}
+.workload-badge{font-size:9px;font-weight:900;letter-spacing:.04em;border-radius:999px;padding:5px 7px;white-space:nowrap}
+.workload-badge.free{background:#edf8f1;color:#187346}
+.workload-badge.normal{background:#eef8fc;color:#0878ad}
+.workload-badge.busy{background:#fff6dc;color:#856000}
+.workload-badge.overload{background:#fff0ee;color:#b42318}
+.team-workload{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding:7px 9px;border-radius:7px;background:#f7fafb;color:#617780;font-size:10px}
+.team-workload b{color:#26343d;font-size:11px}
+@media(max-width:620px){.team-numbers-3{grid-template-columns:1fr 1fr}.team-numbers-3 .done{grid-column:1/-1}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -389,7 +408,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.5</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.7</span></div>
   </div>
 </header><div class="w">
 
@@ -422,7 +441,8 @@ body.station-operation #stationConfigDetails{display:none}
 
  <section id="newOrder" class="view hide">
   <div id="orderImport" class="c"><h2>Novo pedido</h2><p class="muted">Fotografe ou selecione a Separação de Mercadoria.</p><input id="orderPhoto" type="file" accept="image/*" capture="environment"><img id="orderPreview" class="hide"><button id="readOrder" class="full">LER PEDIDO</button><div id="orderResult"></div></div>
-  <div id="orderConfirm" class="c hide"><h2>Confirmar e atribuir pedido</h2><div class="meta"><div><small>Venda</small><br><b id="sale"></b></div><div><small>Data</small><br><b id="date"></b></div></div><p><small>Cliente</small><br><b id="client"></b></p><label>Separador responsável</label><select id="assignee"></select><div style="overflow:auto"><table><thead><tr><th>Qtde</th><th>Ref.</th><th>Descrição</th><th></th></tr></thead><tbody id="orderRows"></tbody></table></div><button id="saveOrder" class="full">SALVAR E ATRIBUIR PEDIDO</button><button id="backOrder" class="secondary full">TROCAR FOTO</button><div id="saveMsg"></div></div>
+  <div id="orderConfirm" class="c hide"><h2>Confirmar e atribuir pedido</h2><div class="meta"><div><small>Venda</small><br><b id="sale"></b></div><div><small>Data</small><br><b id="date"></b></div></div><p><small>Cliente</small><br><b id="client"></b></p><label>Separador responsável</label><select id="assignee"></select>
+<div id="assigneeRecommendation" class="assignee-recommendation"></div><div style="overflow:auto"><table><thead><tr><th>Qtde</th><th>Ref.</th><th>Descrição</th><th></th></tr></thead><tbody id="orderRows"></tbody></table></div><button id="saveOrder" class="full">SALVAR E ATRIBUIR PEDIDO</button><button id="backOrder" class="secondary full">TROCAR FOTO</button><div id="saveMsg"></div></div>
  </section>
 
  <section id="users" class="view hide"><div class="c">
@@ -725,13 +745,14 @@ function renderTeamOverview(){
   dashboardOrders.forEach(o=>{
     if(!o.assigned_to)return;
     const name=o.assigned?.nome||'Sem nome';
-    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,doneToday:0,activeOrders:[]});
+    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,waiting:0,doneToday:0,activeOrders:[]});
     const p=people.get(o.assigned_to);
     if(o.status==='em_separacao'){p.separating++;p.activeOrders.push(o)}
+    if(o.status==='aguardando')p.waiting++;
     if(o.status==='concluido'&&orderCompletionDate(o)===today)p.doneToday++;
   });
-  const arr=[...people.values()].sort((a,b)=>b.separating-a.separating||b.doneToday-a.doneToday||a.name.localeCompare(b.name));
-  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>`<div class="team-card ${p.separating===0?'no-work':''}"><div class="team-name">${esc(p.name)}</div><div class="team-numbers"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div>${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
+  const arr=[...people.values()].sort((a,b)=>(b.separating+b.waiting)-(a.separating+a.waiting)||b.doneToday-a.doneToday||a.name.localeCompare(b.name));
+  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>{const load=p.separating+p.waiting,loadClass=load===0?'free':load<=2?'normal':load<=4?'busy':'overload',loadText=load===0?'LIVRE':load<=2?'NORMAL':load<=4?'OCUPADO':'SOBRECARGA';return `<div class="team-card ${load===0?'no-work':''}"><div class="team-card-head"><div class="team-name">${esc(p.name)}</div><span class="workload-badge ${loadClass}">${loadText}</span></div><div class="team-numbers team-numbers-3"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric waiting"><small>Aguardando</small><b>${p.waiting}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div><div class="team-workload"><span>Carga atual</span><b>${load} pedido${load===1?'':'s'}</b></div>${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`}).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
 }
 
 function renderOperationalAlerts(){
@@ -1678,7 +1699,20 @@ async function loadReferenceForPick(ref){
   return p;
 }
 
-async function loadSeparators(){const {data}=await db.from('profiles').select('id,nome,role,ativo').eq('role','separador').eq('ativo',true).order('nome');$('assignee').innerHTML=(data||[]).map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('')||'<option value="">Nenhum separador cadastrado</option>'}
+async function loadSeparators(){
+  const [{data:people,error:pe},{data:active,error:ae}]=await Promise.all([
+    db.from('profiles').select('id,nome,role,ativo').eq('role','separador').eq('ativo',true).order('nome'),
+    db.from('orders').select('id,assigned_to,status').in('status',['aguardando','em_separacao'])
+  ]);
+  if(pe){$('assignee').innerHTML='<option value="">Erro ao carregar separadores</option>';return}
+  const load={};(active||[]).forEach(o=>{if(o.assigned_to)load[o.assigned_to]=(load[o.assigned_to]||0)+1});
+  const arr=(people||[]).map(x=>({...x,activeCount:load[x.id]||0})).sort((a,b)=>a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
+  const min=arr.length?arr[0].activeCount:0;
+  $('assignee').innerHTML=arr.map((x,n)=>`<option value="${x.id}">${esc(x.nome)} — ${x.activeCount} ativo${x.activeCount===1?'':'s'}${x.activeCount===min?' • RECOMENDADO':''}</option>`).join('')||'<option value="">Nenhum separador cadastrado</option>';
+  if(arr.length)$('assignee').value=arr[0].id;
+  const rec=$('assigneeRecommendation');
+  if(rec)rec.innerHTML=arr.length?`<b>Sugestão automática:</b> ${esc(arr[0].nome)} está com a menor carga atual (${arr[0].activeCount} pedido${arr[0].activeCount===1?'':'s'} ativo${arr[0].activeCount===1?'':'s'}). <span>A decisão continua sendo do administrador.</span>`:'';
+}
 async function createManagedUser(){const nome=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;if(!nome||!email||password.length<8){$('newUserMsg').textContent='Preencha nome, e-mail e uma senha inicial com pelo menos 8 caracteres.';return}$('createUserBtn').disabled=true;$('newUserMsg').textContent='Criando usuário...';try{const {data:{session:current}}=await db.auth.getSession();if(!current)throw new Error('Sessão expirada. Entre novamente.');const r=await fetch('/.netlify/functions/manage-user',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+current.access_token},body:JSON.stringify({action:'create',nome,email,password,role})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha ao criar usuário.');$('newUserMsg').textContent='Usuário criado com sucesso.';$('newUserName').value='';$('newUserEmail').value='';$('newUserPassword').value='';$('newUserForm').classList.add('hide');await loadUsers()}catch(e){$('newUserMsg').textContent=e.message}finally{$('createUserBtn').disabled=false}}
 async function toggleUser(id,isActive){const action=isActive?'desativar':'ativar';if(!confirm(`${action[0].toUpperCase()+action.slice(1)} este usuário?`))return;const {error}=await db.from('profiles').update({ativo:!isActive}).eq('id',id);if(error)return alert(error.message);await loadUsers()}
 async function loadUsers(){const {data,error}=await db.from('profiles').select('id,nome,role,ativo,created_at').order('nome');if(error){$('usersList').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}$('usersList').innerHTML=(data||[]).map(u=>`<div class="item"><div class="top"><div><b>${esc(u.nome)}</b><div class="small">${u.role==='admin'?'Administrador':'Separador'} • ${u.ativo?'Ativo':'Desativado'}</div></div>${u.id!==session.user.id?`<button class="secondary" data-toggle-user="${u.id}" data-active="${u.ativo?'1':'0'}">${u.ativo?'DESATIVAR':'ATIVAR'}</button>`:'<span class="pill">VOCÊ</span>'}</div></div>`).join('')||'<p class="muted">Nenhum usuário.</p>';document.querySelectorAll('[data-toggle-user]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.toggleUser,b.dataset.active==='1'))}
