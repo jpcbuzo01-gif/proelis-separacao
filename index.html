@@ -945,8 +945,8 @@ async function startStation(){
     setStationState(stationPromptPlace(),'wait');
     $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando balança';
     // If Web Serial is available, user can connect the scale. Otherwise simulation remains usable.
-    if($('weightMode'))$('weightMode').value='simulacao';
-    if($('stationScaleStatus'))$('stationScaleStatus').textContent='MODO SIMULAÇÃO • Urano POP-S 31/2 USB aguardando instalação.';
+    if($('weightMode')&&$('weightMode').value!=='serial')$('weightMode').value='simulacao';
+    if($('stationScaleStatus'))$('stationScaleStatus').textContent=$('weightMode')?.value==='serial'?'MODO BALANÇA FÍSICA • aguardando leituras PROT F.':'MODO SIMULAÇÃO • Urano POP-S 31/2 USB aguardando instalação.';
   }catch(e){setStationState('🔴 NÃO FOI POSSÍVEL ATIVAR A CÂMERA','bad');$('stationSensors').textContent=e.message||e}
 }
 function stopStation(){
@@ -1212,6 +1212,11 @@ const contradictions=Array.isArray(d.contradictions)&&d.contradictions.length?d.
 $('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br><b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* estação conclui somente após retorno a zero */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
 if($('stationCompleteBack'))$('stationCompleteBack').onclick=()=>{station.startedAt=null;station.approvedLots=0;station.rejectedAttempts=0;show('dashboard');loadDashboard()};
 if($('stationStart'))$('stationStart').onclick=startStation;
+if($('stationTestCamera'))$('stationTestCamera').onclick=async()=>{try{await openStationCamera(true)}catch(e){$('stationSetupStatus').textContent='🔴 '+(e.message||e)}};
+if($('stationCameraSelect'))$('stationCameraSelect').onchange=async()=>{if(station.stream){try{await openStationCamera(true)}catch(e){$('stationSetupStatus').textContent='🔴 '+(e.message||e)}}};
+if($('stationConnectScale'))$('stationConnectScale').onclick=async()=>{try{if($('weightMode'))$('weightMode').value='serial';$('stationSetupStatus').textContent='Conectando balança Urano...';await readScaleSerial();$('stationSetupStatus').textContent='⚖️ Balança Urano conectada • aguardando leitura PROT F'}catch(e){$('stationSetupStatus').textContent='🔴 '+(e.message||e)}};
+listStationCameras();
+
 if($('stationOperationMode'))$('stationOperationMode').onclick=()=>setOperationMode(true);
 if($('stationEmergencyManual'))$('stationEmergencyManual').onclick=()=>setOperationMode(false);
 if($('stationSimApply'))$('stationSimApply').onclick=()=>{
