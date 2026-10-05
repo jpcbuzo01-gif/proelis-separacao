@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.0.4</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.0.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -268,6 +268,15 @@ body.station-operation #cameraSetup{display:none}
 .station-progress{height:5px;border-radius:999px;background:#dfe9ed;overflow:hidden;margin-top:8px}
 .station-progress>span{display:block;height:100%;width:0;background:#10a8df;transition:width .25s ease}
 @media(max-width:520px){.auto-flow-config{grid-template-columns:1fr}}
+
+/* V9.0.5 configuração/testes ocultos por padrão */
+.station-config-details{margin-top:12px;border-top:1px solid #dbe8ed;padding-top:10px}
+.station-config-details>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid #cfe0e7;border-radius:7px;background:#f5fafc;color:#48636f;font-size:10px;font-weight:900;letter-spacing:.35px;user-select:none}
+.station-config-details>summary::-webkit-details-marker{display:none}
+.station-config-details[open]>summary{background:#eaf7fc;color:#0878ad;border-color:#add7e8}
+.station-config-body{margin-top:8px}
+.station-config-body .camera-setup{margin-top:0}
+body.station-operation #stationConfigDetails{display:none}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -275,7 +284,7 @@ body.station-operation #cameraSetup{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.0.4</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.0.5</span></div>
   </div>
 </header><div class="w">
 
@@ -420,7 +429,10 @@ body.station-operation #cameraSetup{display:none}
       <div id="stationIdentityMain" style="font-size:19px;font-weight:950"></div>
       <div id="stationIdentitySub" class="small muted" style="margin-top:3px"></div>
     </div>
-    <div id="cameraSetup" class="camera-setup">
+    <details id="stationConfigDetails" class="station-config-details">
+      <summary>⚙ CONFIGURAR / TESTAR ESTAÇÃO</summary>
+      <div class="station-config-body">
+<div id="cameraSetup" class="camera-setup">
       <div class="camera-setup-head"><b>📷 CÂMERA DA ESTAÇÃO</b><span id="cameraSetupBadge">NÃO TESTADA</span></div>
       <div class="camera-setup-grid">
         <label>Câmera<select id="cameraDevice"><option value="">Câmera padrão</option></select></label>
@@ -447,6 +459,8 @@ body.station-operation #cameraSetup{display:none}
         <button id="cameraGuideToggle" class="secondary" type="button">MOSTRAR GUIA</button>
       </div>
     </div>
+          </div>
+    </details>
     <div id="stationVideoStage" class="station-video-stage hide">
       <video id="stationVideo" autoplay playsinline muted></video>
       <div id="stationFrameGuide" class="station-frame-guide medium hide">
