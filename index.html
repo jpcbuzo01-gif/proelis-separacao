@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.0.5</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -277,6 +277,14 @@ body.station-operation #cameraSetup{display:none}
 .station-config-body{margin-top:8px}
 .station-config-body .camera-setup{margin-top:0}
 body.station-operation #stationConfigDetails{display:none}
+
+/* V9.1 configuração persistente e status da estação */
+.station-readiness{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.ready-chip{padding:6px 9px;border-radius:999px;background:#f1f4f5;color:#60727b;border:1px solid #dce5e8;font-size:10px;font-weight:900}
+.ready-chip.ok{background:#e8f8ef;color:#187346;border-color:#bee6cf}
+.ready-chip.warn{background:#fff7dc;color:#806000;border-color:#efd98a}
+.ready-chip.station{margin-left:auto}
+@media(max-width:520px){.ready-chip.station{margin-left:0}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -284,7 +292,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.0.5</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.1</span></div>
   </div>
 </header><div class="w">
 
@@ -428,6 +436,11 @@ body.station-operation #stationConfigDetails{display:none}
     <div id="stationState" style="margin-top:12px;padding:18px;border-radius:14px;background:#f3f4f6;font-size:20px;font-weight:900">MODO MANUAL</div><div class="station-progress"><span id="stationProgress"></span></div><div id="stationIdentity" class="hide" style="margin-top:8px;padding:10px 12px;border:2px solid #e2e6ea;border-radius:12px;background:#fff">
       <div id="stationIdentityMain" style="font-size:19px;font-weight:950"></div>
       <div id="stationIdentitySub" class="small muted" style="margin-top:3px"></div>
+    </div>
+    <div id="stationReadiness" class="station-readiness">
+      <span id="readyCamera" class="ready-chip">📷 Câmera: não testada</span>
+      <span id="readyScale" class="ready-chip">⚖️ Urano: simulação</span>
+      <span id="readyStation" class="ready-chip station">🟡 Estação em preparação</span>
     </div>
     <details id="stationConfigDetails" class="station-config-details">
       <summary>⚙ CONFIGURAR / TESTAR ESTAÇÃO</summary>
@@ -1013,6 +1026,39 @@ function updateStationCycle(){
 }
 function stationLast(text){if($('stationLast'))$('stationLast').textContent='Última conferência: '+text}
 
+
+const STATION_CFG_KEY='proelis_station_config_v91';
+function loadStationConfig(){
+  try{return JSON.parse(localStorage.getItem(STATION_CFG_KEY)||'{}')||{}}catch{return {}}
+}
+function saveStationConfig(){
+  try{
+    const cfg=loadStationConfig();
+    cfg.cameraDevice=$('cameraDevice')?.value||cfg.cameraDevice||'';
+    cfg.frameSize=$('cameraFrameSize')?.value||'medium';
+    cfg.captureDelay=$('autoCaptureDelay')?.value||'650';
+    cfg.weightMode=$('weightMode')?.value||'simulacao';
+    localStorage.setItem(STATION_CFG_KEY,JSON.stringify(cfg));
+  }catch{}
+  updateStationReadiness();
+}
+function updateStationReadiness(){
+  const cam=$('readyCamera'),scale=$('readyScale'),st=$('readyStation');
+  if(!cam||!scale||!st)return;
+  const cameraOk=$('cameraSetupBadge')?.classList.contains('ok');
+  const serial=$('weightMode')?.value==='serial';
+  cam.textContent=cameraOk?'📷 Câmera: pronta':'📷 Câmera: não testada';cam.className='ready-chip '+(cameraOk?'ok':'warn');
+  scale.textContent=serial?'⚖️ Urano: modo físico':'⚖️ Urano: simulação';scale.className='ready-chip '+(serial?'ok':'warn');
+  st.textContent=(cameraOk&&serial)?'🟢 Estação pronta':cameraOk?'🟡 Câmera pronta • balança em simulação':'🟡 Estação em preparação';
+  st.className='ready-chip station '+((cameraOk&&serial)?'ok':'warn');
+}
+function applyStationConfig(){
+  const cfg=loadStationConfig();
+  if($('cameraFrameSize')&&cfg.frameSize){$('cameraFrameSize').value=cfg.frameSize;const g=$('stationFrameGuide');if(g){g.classList.remove('small','medium','large');g.classList.add(cfg.frameSize)}}
+  if($('autoCaptureDelay')&&cfg.captureDelay)$('autoCaptureDelay').value=cfg.captureDelay;
+  if($('weightMode')&&cfg.weightMode)$('weightMode').value=cfg.weightMode;
+  updateStationReadiness();
+}
 async function refreshCameraDevices(){
   if(!navigator.mediaDevices?.enumerateDevices)return [];
   const devices=await navigator.mediaDevices.enumerateDevices();
@@ -1020,7 +1066,9 @@ async function refreshCameraDevices(){
   const sel=$('cameraDevice'),old=sel?.value||'';
   if(sel){
     sel.innerHTML='<option value="">Câmera padrão</option>'+cams.map((c,n)=>`<option value="${esc(c.deviceId)}">${esc(c.label||('Câmera '+(n+1)))}</option>`).join('');
+    const saved=loadStationConfig().cameraDevice||'';
     if([...sel.options].some(o=>o.value===old))sel.value=old;
+    else if(saved&&[...sel.options].some(o=>o.value===saved))sel.value=saved;
   }
   return cams;
 }
@@ -1033,7 +1081,7 @@ async function testSelectedCamera(){
   $('stationVideo').srcObject=station.stream;$('stationVideo').classList.remove('hide');$('stationVideoStage')?.classList.remove('hide');
   await new Promise(r=>setTimeout(r,300));
   const track=station.stream.getVideoTracks()[0],s=track?.getSettings?.()||{};
-  $('cameraSetupBadge').textContent='OK';$('cameraSetupBadge').classList.add('ok');
+  $('cameraSetupBadge').textContent='OK';$('cameraSetupBadge').classList.add('ok');saveStationConfig();
   $('cameraSetupInfo').textContent=`${track?.label||'Câmera ativa'} • ${s.width||'—'} × ${s.height||'—'}`;$('stationFrameGuide')?.classList.remove('hide');if($('cameraGuideToggle'))$('cameraGuideToggle').textContent='OCULTAR GUIA';
   await refreshCameraDevices();
 }
@@ -1323,7 +1371,11 @@ $('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.refer
 if($('stationCompleteBack'))$('stationCompleteBack').onclick=()=>{station.startedAt=null;station.approvedLots=0;station.rejectedAttempts=0;show('dashboard');loadDashboard()};
 if($('cameraTest'))$('cameraTest').onclick=async()=>{try{$('cameraSetupInfo').textContent='Solicitando acesso à câmera...';await testSelectedCamera()}catch(e){$('cameraSetupBadge').textContent='ERRO';$('cameraSetupBadge').classList.remove('ok');$('cameraSetupInfo').textContent=e.message||e}};
 if($('cameraGuideToggle'))$('cameraGuideToggle').onclick=()=>{const g=$('stationFrameGuide');if(!g)return;const hidden=g.classList.toggle('hide');$('cameraGuideToggle').textContent=hidden?'MOSTRAR GUIA':'OCULTAR GUIA'};
-if($('cameraFrameSize'))$('cameraFrameSize').onchange=()=>{const g=$('stationFrameGuide');if(!g)return;g.classList.remove('small','medium','large');g.classList.add($('cameraFrameSize').value)};
+if($('cameraFrameSize'))$('cameraFrameSize').onchange=()=>{const g=$('stationFrameGuide');if(g){g.classList.remove('small','medium','large');g.classList.add($('cameraFrameSize').value)}saveStationConfig()};
+if($('autoCaptureDelay'))$('autoCaptureDelay').onchange=saveStationConfig;
+if($('cameraDevice'))$('cameraDevice').onchange=saveStationConfig;
+if($('weightMode'))$('weightMode').addEventListener('change',saveStationConfig);
+applyStationConfig();
 
 if($('stationStart'))$('stationStart').onclick=startStation;
 
