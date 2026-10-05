@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.4</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -318,7 +318,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.4</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.5</span></div>
   </div>
 </header><div class="w">
 
@@ -418,7 +418,7 @@ body.station-operation #stationConfigDetails{display:none}
       <button id="refreshMetrics" class="secondary">ATUALIZAR</button>
     </div>
     <div id="metricsSummary" class="grid" style="margin-top:12px"></div><div id="stationMetrics" class="station-metrics">
-      <div class="section-kicker">PRODUTIVIDADE DA ESTAÇÃO</div>
+      <div class="section-kicker">PRODUTIVIDADE DA ESTAÇÃO</div><div class="small muted" style="margin-top:3px">Dados centralizados no Supabase • fallback local automático</div>
       <div id="stationMetricsSummary" class="grid"></div>
       <div class="station-metric-tools">
         <select id="stationMetricPeriod"><option value="today">Hoje</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="all">Todo período</option></select>
@@ -662,7 +662,7 @@ function errorKind(a){
   if(/QUANTIDADE|CONTAGEM|UNIDADES?/.test(t))return 'Quantidade';
   return 'Produto';
 }
-async function loadMetrics(){renderStationMetrics();
+async function loadMetrics(){await loadCentralStationMetrics();renderStationMetrics();
   if(profile.role!=='admin')return;
   $('metricsSummary').innerHTML='<div class="muted">Carregando indicadores...</div>';
   $('metricsUsers').innerHTML='';
@@ -1122,11 +1122,27 @@ async function testSelectedCamera(){
 }
 
 const STATION_METRICS_KEY='proelis_station_metrics_v92';
-function stationMetricRows(){try{return JSON.parse(localStorage.getItem(STATION_METRICS_KEY)||'[]')||[]}catch{return []}}
+let stationCentralRows=[];
+function stationMetricRows(){
+  try{
+    const local=JSON.parse(localStorage.getItem(STATION_METRICS_KEY)||'[]')||[];
+    const byKey=new Map();
+    [...stationCentralRows,...local].forEach(r=>byKey.set(String(r.id||r.session_id||[r.orderId,r.startedAt].join('|')),r));
+    return [...byKey.values()].sort((a,b)=>new Date(a.startedAt)-new Date(b.startedAt));
+  }catch{return stationCentralRows||[]}
+}
 function stationMetricSave(rows){try{localStorage.setItem(STATION_METRICS_KEY,JSON.stringify((rows||[]).slice(-300)))}catch{}}
+async function loadCentralStationMetrics(){
+  if(!profile||profile.role!=='admin'){stationCentralRows=[];return}
+  try{
+    const {data,error}=await db.from('station_sessions').select('*').order('started_at',{ascending:true}).limit(1000);
+    if(error)throw error;
+    stationCentralRows=(data||[]).map(r=>({id:r.id,orderId:r.order_id,numero:r.order_number||'',operator:r.operator_name||'',startedAt:r.started_at,finishedAt:r.finished_at,durationMs:r.duration_ms||0,approvedLots:r.approved_lots||0,attempts:r.attempts||0,rejections:r.rejections||0,inconclusive:r.inconclusive||0}));
+  }catch(e){console.warn('Produtividade central indisponível; usando dados locais.',e);stationCentralRows=[]}
+}
 function stationMetricStart(){
   if(!currentOrder)return;
-  station.metricRun={orderId:currentOrder.id,numero:currentOrder.numero_venda||'',operator:profile?.nome||session?.user?.email||'',startedAt:new Date().toISOString(),itemStartAt:Date.now(),itemTimes:[],attempts:0,rejections:0,inconclusive:0,approvedLots:0};
+  station.metricRun={orderId:currentOrder.id,numero:currentOrder.numero_venda||'',operatorId:session?.user?.id||null,operator:profile?.nome||session?.user?.email||'',startedAt:new Date().toISOString(),itemStartAt:Date.now(),itemTimes:[],attempts:0,rejections:0,inconclusive:0,approvedLots:0};
 }
 function stationMetricAttempt(result){
   const m=station.metricRun;if(!m)return;m.attempts++;
@@ -1137,10 +1153,16 @@ function stationMetricApproved(){
   const m=station.metricRun;if(!m)return;m.approvedLots++;
   if(m.itemStartAt){m.itemTimes.push(Math.max(0,Date.now()-m.itemStartAt));m.itemStartAt=Date.now()}
 }
-function stationMetricFinish(){
+async function stationMetricFinish(){
   const m=station.metricRun;if(!m)return;
   m.finishedAt=new Date().toISOString();m.durationMs=Math.max(0,new Date(m.finishedAt)-new Date(m.startedAt));
   const rows=stationMetricRows();rows.push(m);stationMetricSave(rows);station.metricRun=null;
+  try{
+    const payload={order_id:m.orderId||null,order_number:m.numero||null,operator_id:m.operatorId||session?.user?.id||null,operator_name:m.operator||profile?.nome||null,started_at:m.startedAt,finished_at:m.finishedAt,duration_ms:Math.round(m.durationMs||0),approved_lots:m.approvedLots||0,attempts:m.attempts||0,rejections:m.rejections||0,inconclusive:m.inconclusive||0};
+    const {data,error}=await db.from('station_sessions').insert(payload).select().single();
+    if(error)throw error;
+    if(data){m.id=data.id;stationCentralRows.push({...m})}
+  }catch(e){console.warn('Sessão salva localmente; sincronização central indisponível.',e)}
 }
 function filteredStationMetricRows(){
   const period=$('stationMetricPeriod')?.value||'today',q=($('stationMetricSearch')?.value||'').trim().toLowerCase(),now=new Date();
@@ -1410,7 +1432,7 @@ async function finishApprovedBatch(x,batchQty){
   if(!finished){renderPick();$('result').innerHTML=`<div class="ok"><b>Lote aprovado.</b> ${itemConfirmed} de ${x.quantidade} unidades conferidas. Separe o próximo lote.</div>`;return}
   i++;while(i<items.length&&items[i].status==='aprovado')i++;
   if(i<items.length){itemConfirmed=items[i].quantidade_conferida||0;renderPick()}
-  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);const finishedAt=new Date();const totalMs=currentOrder?.created_at?Math.max(0,finishedAt.getTime()-new Date(currentOrder.created_at).getTime()):null;await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:`Todos os itens aprovados. Tempo total desde o envio pelo administrador: ${formatOrderDuration(totalMs)}. Lotes: ${station.approvedLots}. Tentativas reprovadas/inconclusivas: ${station.rejectedAttempts}.`});stationMetricFinish();showStationComplete()}
+  else{await db.from('orders').update({status:'concluido',completed_at:new Date().toISOString()}).eq('id',currentOrder.id);const finishedAt=new Date();const totalMs=currentOrder?.created_at?Math.max(0,finishedAt.getTime()-new Date(currentOrder.created_at).getTime()):null;await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'pedido_concluido',descricao:`Todos os itens aprovados. Tempo total desde o envio pelo administrador: ${formatOrderDuration(totalMs)}. Lotes: ${station.approvedLots}. Tentativas reprovadas/inconclusivas: ${station.rejectedAttempts}.`});await stationMetricFinish();showStationComplete()}
 }
 
 async function loadReferenceForPick(ref){
