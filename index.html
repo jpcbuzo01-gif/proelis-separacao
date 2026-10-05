@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.6</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.7</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -320,6 +320,14 @@ body.station-operation #stationConfigDetails{display:none}
 .performance-table td b{color:#173f51}
 .performance-rank{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;background:#e9f7fc;color:#0878ad;font-weight:900}
 @media(max-width:760px){.performance-table{min-width:760px}.station-team-performance{overflow-x:auto}}
+
+/* V9.7 dashboard gerencial */
+.management-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.management-table th{background:#f2f8fa;color:#52707e;text-transform:uppercase;letter-spacing:.3px;font-size:9px;text-align:left;padding:9px 7px;white-space:nowrap}
+.management-table td{padding:10px 7px;border-bottom:1px solid #e7eef1;vertical-align:middle}
+.management-table td b{color:#173f51}
+#managementDashboard{overflow-x:auto}
+@media(max-width:850px){.management-table{min-width:900px}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -327,7 +335,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.6</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.7</span></div>
   </div>
 </header><div class="w">
 
@@ -440,6 +448,10 @@ body.station-operation #stationConfigDetails{display:none}
         <div id="stationTeamPerformanceTable" style="margin-top:10px"></div>
       </div>
     </div>
+  </div>
+  <div id="managementDashboard" class="c">
+    <div class="top"><div><div class="section-kicker">GESTÃO DA EXPEDIÇÃO</div><h2>Dashboard gerencial</h2><p class="muted">Produtividade da Estação Inteligente + qualidade das conferências por separador.</p></div></div>
+    <div id="managementDashboardTable"></div>
   </div>
   <div class="c">
     <h2>Por funcionário</h2>
@@ -675,6 +687,24 @@ function errorKind(a){
   if(/QUANTIDADE|CONTAGEM|UNIDADES?/.test(t))return 'Quantidade';
   return 'Produto';
 }
+
+let managementQualityGroups={};
+function renderManagementDashboard(){
+  const target=$('managementDashboardTable');if(!target)return;
+  const sessions=filteredStationMetricRows(),prod={};
+  sessions.forEach(r=>{
+    const key=r.operatorId||'',name=r.operator||'Operador';
+    if(!prod[key])prod[key]={name,sessions:0,total:0,lots:0};
+    prod[key].sessions++;prod[key].total+=Number(r.durationMs)||0;prod[key].lots+=Number(r.approvedLots)||0;
+  });
+  const keys=new Set([...Object.keys(prod),...Object.keys(managementQualityGroups)]);
+  const rows=[...keys].map(k=>{
+    const p=prod[k]||{name:managementQualityGroups[k]?.nome||'Operador',sessions:0,total:0,lots:0},q=managementQualityGroups[k]||{approved:0,rejected:0,inconclusive:0};
+    const decisive=q.approved+q.rejected,rate=decisive?q.rejected/decisive*100:0;
+    return {name:p.name,sessions:p.sessions,avg:p.sessions?p.total/p.sessions:0,lots:p.lots,approved:q.approved,rejected:q.rejected,inconclusive:q.inconclusive,rate};
+  }).sort((a,b)=>b.sessions-a.sessions||a.rate-b.rate);
+  target.innerHTML=rows.length?`<table class="management-table"><thead><tr><th>Separador</th><th>Pedidos</th><th>Tempo médio</th><th>Lotes</th><th>Aprovados</th><th>Erros evitados</th><th>Inconclusivos</th><th>Taxa de erro*</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.sessions}</td><td>${r.sessions?esc(formatOrderDuration(r.avg)):'—'}</td><td>${r.lots}</td><td>${r.approved}</td><td>${r.rejected}</td><td>${r.inconclusive}</td><td><b>${r.rate.toFixed(1)}%</b></td></tr>`).join('')}</tbody></table><p class="small muted">* Qualidade usa o histórico de conferências. Produtividade respeita o filtro de período da Estação Inteligente.</p>`:'<p class="muted">Ainda não há dados para o dashboard gerencial.</p>';
+}
 async function loadMetrics(){await loadCentralStationMetrics();renderStationMetrics();
   if(profile.role!=='admin')return;
   $('metricsSummary').innerHTML='<div class="muted">Carregando indicadores...</div>';
@@ -710,6 +740,7 @@ async function loadMetrics(){await loadCentralStationMetrics();renderStationMetr
     else if(a.resultado==='reprovado')g.rejected++;
     else g.inconclusive++;
   });
+  managementQualityGroups=grouped;
   const rows=Object.values(grouped).sort((a,b)=>a.nome.localeCompare(b.nome));
   $('metricsUsers').innerHTML=rows.length?`<div style="overflow:auto"><table>
     <thead><tr><th>Funcionário</th><th>Tentativas</th><th>Aprovados</th><th>Erros evitados</th><th>Inconclusivos</th><th>Taxa de erro*</th><th></th></tr></thead>
@@ -718,6 +749,7 @@ async function loadMetrics(){await loadCentralStationMetrics();renderStationMetr
       <td><button class="secondary" style="padding:8px;margin:0" data-metric-user="${esc(g.id)}">VER DETALHES</button></td></tr>`}).join('')}</tbody></table></div>
     <p class="small muted">* Taxa de erro = reprovações ÷ (aprovações + reprovações). Inconclusivos não contam como erro.</p>`:'<p class="muted">Ainda não há conferências registradas.</p>';
   document.querySelectorAll('[data-metric-user]').forEach(b=>b.onclick=()=>showMetricUser(b.dataset.metricUser,grouped[b.dataset.metricUser],users));
+  renderManagementDashboard();
 }
 async function showMetricUser(uid,g,users){
   if(!g)return;
@@ -1558,8 +1590,8 @@ if($('confirmWeight'))$('confirmWeight').onclick=async()=>{
 };
 
 if($('refreshMetrics'))$('refreshMetrics').onclick=loadMetrics;
-if($('stationMetricPeriod'))$('stationMetricPeriod').onchange=renderStationMetrics;
-if($('stationMetricSearch'))$('stationMetricSearch').oninput=renderStationMetrics;
+if($('stationMetricPeriod'))$('stationMetricPeriod').onchange=()=>{renderStationMetrics();renderManagementDashboard()};
+if($('stationMetricSearch'))$('stationMetricSearch').oninput=()=>{renderStationMetrics();renderManagementDashboard()};
 if($('stationMetricExport'))$('stationMetricExport').onclick=exportStationMetricsCsv;
 if($('newUserBtn'))$('newUserBtn').onclick=()=>{$('newUserForm').classList.remove('hide');$('newUserMsg').textContent=''};if($('cancelUserBtn'))$('cancelUserBtn').onclick=()=>$('newUserForm').classList.add('hide');if($('createUserBtn'))$('createUserBtn').onclick=createManagedUser;
 if($('catalogSearch'))$('catalogSearch').oninput=renderCatalogList;
