@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.2</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.3</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -293,6 +293,11 @@ body.station-operation #stationConfigDetails{display:none}
 .station-run{display:grid;grid-template-columns:minmax(120px,1.2fr) repeat(4,minmax(80px,.7fr));gap:7px;align-items:center;padding:9px 5px;border-bottom:1px solid #edf2f4;font-size:11px}
 .station-run b{color:#173f51}.station-run small{color:#72838b}
 @media(max-width:700px){.station-run{grid-template-columns:1fr 1fr}.station-run .station-run-main{grid-column:1/-1}}
+
+/* V9.3 filtros e exportação da produtividade */
+.station-metric-tools{display:grid;grid-template-columns:170px 1fr auto;gap:7px;margin-top:12px}
+.station-metric-tools select,.station-metric-tools input{margin:0}
+@media(max-width:650px){.station-metric-tools{grid-template-columns:1fr}.station-metric-tools button{width:100%}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -300,7 +305,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.2</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.3</span></div>
   </div>
 </header><div class="w">
 
@@ -402,6 +407,11 @@ body.station-operation #stationConfigDetails{display:none}
     <div id="metricsSummary" class="grid" style="margin-top:12px"></div><div id="stationMetrics" class="station-metrics hide">
       <div class="section-kicker">PRODUTIVIDADE DA ESTAÇÃO</div>
       <div id="stationMetricsSummary" class="grid"></div>
+      <div class="station-metric-tools">
+        <select id="stationMetricPeriod"><option value="today">Hoje</option><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="all">Todo período</option></select>
+        <input id="stationMetricSearch" type="search" placeholder="Venda ou operador">
+        <button id="stationMetricExport" class="secondary" type="button">EXPORTAR CSV</button>
+      </div>
       <div id="stationMetricsRecent"></div>
     </div>
   </div>
@@ -1103,7 +1113,7 @@ function stationMetricRows(){try{return JSON.parse(localStorage.getItem(STATION_
 function stationMetricSave(rows){try{localStorage.setItem(STATION_METRICS_KEY,JSON.stringify((rows||[]).slice(-300)))}catch{}}
 function stationMetricStart(){
   if(!currentOrder)return;
-  station.metricRun={orderId:currentOrder.id,numero:currentOrder.numero_venda||'',startedAt:new Date().toISOString(),itemStartAt:Date.now(),itemTimes:[],attempts:0,rejections:0,inconclusive:0,approvedLots:0};
+  station.metricRun={orderId:currentOrder.id,numero:currentOrder.numero_venda||'',operator:profile?.nome||session?.user?.email||'',startedAt:new Date().toISOString(),itemStartAt:Date.now(),itemTimes:[],attempts:0,rejections:0,inconclusive:0,approvedLots:0};
 }
 function stationMetricAttempt(result){
   const m=station.metricRun;if(!m)return;m.attempts++;
@@ -1119,13 +1129,30 @@ function stationMetricFinish(){
   m.finishedAt=new Date().toISOString();m.durationMs=Math.max(0,new Date(m.finishedAt)-new Date(m.startedAt));
   const rows=stationMetricRows();rows.push(m);stationMetricSave(rows);station.metricRun=null;
 }
+function filteredStationMetricRows(){
+  const period=$('stationMetricPeriod')?.value||'today',q=($('stationMetricSearch')?.value||'').trim().toLowerCase(),now=new Date();
+  let since=null;
+  if(period==='today'){since=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()}
+  else if(period!=='all'){since=Date.now()-Number(period)*86400000}
+  return stationMetricRows().filter(r=>{
+    const t=new Date(r.startedAt).getTime(),hay=[r.numero,r.operator].filter(Boolean).join(' ').toLowerCase();
+    return (!since||t>=since)&&(!q||hay.includes(q));
+  });
+}
 function renderStationMetrics(){
   const box=$('stationMetrics'),sum=$('stationMetricsSummary'),recent=$('stationMetricsRecent');if(!box||!sum||!recent)return;
-  const rows=stationMetricRows();box.classList.toggle('hide',!rows.length);if(!rows.length)return;
+  const all=stationMetricRows(),rows=filteredStationMetricRows();box.classList.toggle('hide',!all.length);if(!all.length)return;
   const total=rows.reduce((a,r)=>a+(Number(r.durationMs)||0),0),lots=rows.reduce((a,r)=>a+(Number(r.approvedLots)||0),0),rej=rows.reduce((a,r)=>a+(Number(r.rejections)||0),0),inc=rows.reduce((a,r)=>a+(Number(r.inconclusive)||0),0);
   const avg=rows.length?total/rows.length:0,avgLot=lots?total/lots:0;
   sum.innerHTML=`<div class="stat"><b>${rows.length}</b>Sessões</div><div class="stat"><b>${formatOrderDuration(avg)}</b>Tempo médio</div><div class="stat"><b>${formatOrderDuration(avgLot)}</b>Médio/lote</div><div class="stat"><b>${rej}</b>Reprovações</div><div class="stat"><b>${inc}</b>Inconclusivos</div>`;
-  recent.innerHTML='<b>ÚLTIMAS SESSÕES DA ESTAÇÃO</b>'+rows.slice(-10).reverse().map(r=>`<div class="station-run"><div class="station-run-main"><b>Venda ${esc(r.numero||'—')}</b><br><small>${esc(new Date(r.startedAt).toLocaleString('pt-BR'))}</small></div><span>⏱ ${esc(formatOrderDuration(r.durationMs))}</span><span>✓ ${r.approvedLots||0} lotes</span><span>🔴 ${r.rejections||0}</span><span>🟠 ${r.inconclusive||0}</span></div>`).join('');
+  recent.innerHTML=rows.length?'<b>SESSÕES DA ESTAÇÃO</b>'+rows.slice().reverse().slice(0,30).map(r=>`<div class="station-run"><div class="station-run-main"><b>Venda ${esc(r.numero||'—')}</b><br><small>${esc(r.operator||'Operador não registrado')} • ${esc(new Date(r.startedAt).toLocaleString('pt-BR'))}</small></div><span>⏱ ${esc(formatOrderDuration(r.durationMs))}</span><span>✓ ${r.approvedLots||0} lotes</span><span>🔴 ${r.rejections||0}</span><span>🟠 ${r.inconclusive||0}</span></div>`).join(''):'<div class="muted" style="margin-top:10px">Nenhuma sessão encontrada neste filtro.</div>';
+}
+function exportStationMetricsCsv(){
+  const rows=filteredStationMetricRows();if(!rows.length)return alert('Não há sessões neste filtro para exportar.');
+  const q=v=>'"'+String(v??'').replaceAll('"','""')+'"';
+  const lines=[['Venda','Operador','Inicio','Fim','Duracao','Lotes aprovados','Tentativas','Reprovacoes','Inconclusivos'].map(q).join(';')];
+  rows.forEach(r=>lines.push([r.numero,r.operator,new Date(r.startedAt).toLocaleString('pt-BR'),r.finishedAt?new Date(r.finishedAt).toLocaleString('pt-BR'):'',formatOrderDuration(r.durationMs),r.approvedLots||0,r.attempts||0,r.rejections||0,r.inconclusive||0].map(q).join(';')));
+  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='produtividade-estacao-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 async function startStation(){
   try{
@@ -1460,6 +1487,9 @@ if($('confirmWeight'))$('confirmWeight').onclick=async()=>{
 };
 
 if($('refreshMetrics'))$('refreshMetrics').onclick=loadMetrics;
+if($('stationMetricPeriod'))$('stationMetricPeriod').onchange=renderStationMetrics;
+if($('stationMetricSearch'))$('stationMetricSearch').oninput=renderStationMetrics;
+if($('stationMetricExport'))$('stationMetricExport').onclick=exportStationMetricsCsv;
 if($('newUserBtn'))$('newUserBtn').onclick=()=>{$('newUserForm').classList.remove('hide');$('newUserMsg').textContent=''};if($('cancelUserBtn'))$('cancelUserBtn').onclick=()=>$('newUserForm').classList.add('hide');if($('createUserBtn'))$('createUserBtn').onclick=createManagedUser;
 if($('catalogSearch'))$('catalogSearch').oninput=renderCatalogList;
 if($('newProductBtn'))$('newProductBtn').onclick=()=>openProductEditor();
