@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.3</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -200,7 +200,7 @@ body.station-operation #stationPanel{border-width:3px!important}
 
 /* V8.9 busca, filtros e visão rápida da equipe */
 .section-kicker{font-size:11px;font-weight:900;letter-spacing:1px;color:var(--proelis-blue)}
-.order-tools{display:grid;grid-template-columns:minmax(250px,1fr) 220px 170px auto;gap:9px;margin:15px 0 5px;align-items:center}
+.order-tools{display:grid;grid-template-columns:minmax(230px,1fr) 190px 155px 190px auto;gap:9px;margin:15px 0 5px;align-items:center}
 .order-tools input,.order-tools select{margin:0;height:44px}
 .search-wrap{position:relative;margin:0}
 .search-wrap span{position:absolute;left:13px;top:9px;font-size:22px;color:#6d8793;z-index:1}
@@ -370,6 +370,18 @@ body.station-operation #stationConfigDetails{display:none}
 .operational-alert.critical{border-color:#efc0bb;background:#fff5f4}
 .operational-alert b{color:#173f51}.operational-alert small{display:block;color:#71828a;margin-top:2px}
 .operational-alert-time{font-weight:900;white-space:nowrap;color:#8a6200}.operational-alert.critical .operational-alert-time{color:#b42318}
+
+/* V10.4 atalhos do painel */
+.stat-filter{cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+.stat-filter:hover{transform:translateY(-1px);border-color:#82bfd8}
+.stat-filter.active{border-color:#168bc0;box-shadow:0 0 0 2px rgba(22,139,192,.12)}
+.stat-filter span{display:block;margin-top:7px;font-size:9px;font-weight:900;color:#168bc0;letter-spacing:.04em}
+
+/* V10.5 fila operacional inteligente */
+.order-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.priority-badge{font-size:9px;font-weight:900;letter-spacing:.04em;padding:5px 7px;border-radius:999px;background:#fff4d6;color:#7b5900;border:1px solid #e9cd7d}
+.priority-badge.urgent{background:#fff0ee;color:#b42318;border-color:#efb7b1}
+@media(max-width:760px){.order-status-stack{align-items:flex-start}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -377,7 +389,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.3</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.5</span></div>
   </div>
 </header><div class="w">
 
@@ -400,7 +412,7 @@ body.station-operation #stationConfigDetails{display:none}
     <div class="order-tools">
       <label class="search-wrap"><span>⌕</span><input id="orderSearch" type="search" placeholder="Pesquisar venda, cliente ou separador"></label>
       <select id="separatorFilter" aria-label="Filtrar por separador"><option value="">Todos os separadores</option></select>
-      <select id="statusFilter" aria-label="Filtrar por status"><option value="">Todos os status</option><option value="aguardando">Aguardando</option><option value="em_separacao">Em separação</option><option value="concluido">Concluído</option></select>
+      <select id="statusFilter" aria-label="Filtrar por status"><option value="">Todos os status</option><option value="aguardando">Aguardando</option><option value="em_separacao">Em separação</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select><select id="orderSort" aria-label="Ordenar pedidos"><option value="recent">Mais recentes</option><option value="oldest">Mais antigos</option><option value="attention">Prioridade operacional</option><option value="sale">Número da venda</option></select>
       <button id="clearOrderFilters" class="secondary">LIMPAR</button>
     </div>
     <div id="orderFilterCount" class="small muted filter-count"></div>
@@ -637,7 +649,7 @@ function infer(desc){const u=(desc||'').toUpperCase();const brand=u.includes('HC
 async function boot(){const {data:{session:s}}=await db.auth.getSession();session=s;if(!s){$('loading').classList.add('hide');$('login').classList.remove('hide');return}await enterApp()}
 async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;if(profile.ativo===false){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Seu usuário está desativado. Procure um administrador.</div>';return}$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
 $('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;$('orderSearch').addEventListener('input',renderDashboardOrders);$('separatorFilter').addEventListener('change',renderDashboardOrders);$('statusFilter').addEventListener('change',renderDashboardOrders);$('clearOrderFilters').onclick=()=>{$('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';renderDashboardOrders()};document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='catalog')await loadCatalog();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
+$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;$('orderSearch').addEventListener('input',renderDashboardOrders);$('separatorFilter').addEventListener('change',renderDashboardOrders);$('statusFilter').addEventListener('change',()=>{renderDashboardOrders();syncDashboardStatFilters()});$('orderSort').addEventListener('change',renderDashboardOrders);$('clearOrderFilters').onclick=()=>{$('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='recent';renderDashboardOrders();syncDashboardStatFilters()};document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='catalog')await loadCatalog();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
 let dashboardOrders=[];
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
@@ -669,16 +681,30 @@ function refreshOrderTimers(){
   });
 }
 
+function syncDashboardStatFilters(){document.querySelectorAll('[data-stat-status]').forEach(x=>x.classList.toggle('active',x.dataset.statStatus===$('statusFilter')?.value));}
+function operationalPriority(o){
+  if(o.status==='cancelado'||o.status==='concluido')return 0;
+  const h=orderElapsed(o)/3600000;
+  if(o.status==='em_separacao')return h>=3?4:h>=1?3:1;
+  if(o.status==='aguardando')return h>=6?4:h>=2?3:1;
+  return 0;
+}
 function renderDashboardOrders(){
   const search=($('orderSearch')?.value||'').trim().toLowerCase();
   const sep=$('separatorFilter')?.value||'';
   const status=$('statusFilter')?.value||'';
+  const sort=$('orderSort')?.value||'recent';
   const rows=dashboardOrders.filter(o=>{
     const hay=[o.numero_venda,o.cliente,o.assigned?.nome,o.data_pedido,statusLabel(o.status)].filter(Boolean).join(' ').toLowerCase();
     return (!search||hay.includes(search))&&(!sep||String(o.assigned_to||'')===sep)&&(!status||o.status===status);
+  }).sort((a,b)=>{
+    if(sort==='oldest')return new Date(a.created_at)-new Date(b.created_at);
+    if(sort==='attention')return operationalPriority(b)-operationalPriority(a)||orderElapsed(b)-orderElapsed(a);
+    if(sort==='sale')return String(a.numero_venda||'').localeCompare(String(b.numero_venda||''),undefined,{numeric:true});
+    return new Date(b.created_at)-new Date(a.created_at);
   });
   $('orderFilterCount').textContent=`Exibindo ${rows.length} de ${dashboardOrders.length} pedido${dashboardOrders.length===1?'':'s'}`;
-  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
+  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));
   document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>cancelOrder(b.dataset.cancel));
@@ -729,7 +755,7 @@ async function loadDashboard(){
   dashboardOrders=data||[];
   const counts={aguardando:0,em_separacao:0,concluido:0};
   dashboardOrders.forEach(o=>{if(counts[o.status]!=null)counts[o.status]++});
-  $('stats').innerHTML=`<div class="stat"><small>Aguardando</small><br><b>${counts.aguardando}</b></div><div class="stat"><small>Em separação</small><br><b>${counts.em_separacao}</b></div><div class="stat"><small>Concluídos</small><br><b>${counts.concluido}</b></div>`;
+  $('stats').innerHTML=`<div class="stat stat-filter" data-stat-status="aguardando"><small>Aguardando</small><br><b>${counts.aguardando}</b><span>VER PEDIDOS</span></div><div class="stat stat-filter" data-stat-status="em_separacao"><small>Em separação</small><br><b>${counts.em_separacao}</b><span>VER PEDIDOS</span></div><div class="stat stat-filter" data-stat-status="concluido"><small>Concluídos</small><br><b>${counts.concluido}</b><span>VER PEDIDOS</span></div>`;
   const currentSep=$('separatorFilter')?.value||'';
   const seps=new Map();
   dashboardOrders.forEach(o=>{if(o.assigned_to&&o.assigned?.nome)seps.set(o.assigned_to,o.assigned.nome)});
@@ -738,6 +764,14 @@ async function loadDashboard(){
   renderTeamOverview();
   renderOperationalAlerts();
   renderDashboardOrders();
+  document.querySelectorAll('[data-stat-status]').forEach(card=>card.onclick=()=>{
+    const s=card.dataset.statStatus;
+    $('statusFilter').value=$('statusFilter').value===s?'':s;
+    renderDashboardOrders();
+    syncDashboardStatFilters();
+    $('ordersList')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  syncDashboardStatFilters();
 }
 
 
