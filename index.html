@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.5</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V9.6</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -311,6 +311,15 @@ body.station-operation #stationConfigDetails{display:none}
 #stationMetricsSummary .station-stat b{display:block;font-size:22px;line-height:1.1;color:#173f51;white-space:nowrap}
 @media(max-width:900px){#stationMetricsSummary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){#stationMetricsSummary{grid-template-columns:repeat(2,1fr)}#stationMetricsSummary .station-stat b{font-size:19px}}
+
+/* V9.6 desempenho gerencial por separador */
+.station-team-performance{margin-top:18px;padding-top:15px;border-top:1px solid #dce9ee}
+.performance-table{width:100%;border-collapse:collapse;font-size:12px}
+.performance-table th{background:#f2f8fa;color:#52707e;text-transform:uppercase;letter-spacing:.35px;font-size:10px;text-align:left;padding:9px 8px}
+.performance-table td{padding:10px 8px;border-bottom:1px solid #e8eff2;vertical-align:middle}
+.performance-table td b{color:#173f51}
+.performance-rank{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;background:#e9f7fc;color:#0878ad;font-weight:900}
+@media(max-width:760px){.performance-table{min-width:760px}.station-team-performance{overflow-x:auto}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -318,7 +327,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.5</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V9.6</span></div>
   </div>
 </header><div class="w">
 
@@ -425,7 +434,11 @@ body.station-operation #stationConfigDetails{display:none}
         <input id="stationMetricSearch" type="search" placeholder="Venda ou operador">
         <button id="stationMetricExport" class="secondary" type="button">EXPORTAR CSV</button>
       </div>
-      <div id="stationMetricsRecent"></div>
+      <div id="stationMetricsRecent"></div><div id="stationTeamPerformance" class="station-team-performance hide">
+        <div class="section-kicker">DESEMPENHO POR SEPARADOR</div>
+        <div class="small muted" style="margin-top:3px">Comparativo calculado com as sessões centralizadas no período selecionado.</div>
+        <div id="stationTeamPerformanceTable" style="margin-top:10px"></div>
+      </div>
     </div>
   </div>
   <div class="c">
@@ -1181,6 +1194,7 @@ function renderStationMetrics(){
     sum.innerHTML='<div class="stat station-stat"><small>Sessões</small><b>0</b></div><div class="stat station-stat"><small>Tempo médio</small><b>00:00:00</b></div><div class="stat station-stat"><small>Médio por lote</small><b>00:00:00</b></div><div class="stat station-stat"><small>Reprovações</small><b>0</b></div><div class="stat station-stat"><small>Inconclusivos</small><b>0</b></div>';
     recent.innerHTML='<div class="station-empty"><b>Nenhuma sessão registrada ainda.</b><br><span>Os dados aparecerão aqui após concluir uma separação usando a Estação Inteligente neste computador.</span></div>';
     if($('stationMetricExport'))$('stationMetricExport').disabled=true;
+    renderStationTeamPerformance([]);
     return;
   }
   if($('stationMetricExport'))$('stationMetricExport').disabled=!rows.length;
@@ -1188,6 +1202,21 @@ function renderStationMetrics(){
   const avg=rows.length?total/rows.length:0,avgLot=lots?total/lots:0;
   sum.innerHTML=`<div class="stat station-stat"><small>Sessões</small><b>${rows.length}</b></div><div class="stat station-stat"><small>Tempo médio</small><b>${formatOrderDuration(avg)}</b></div><div class="stat station-stat"><small>Médio por lote</small><b>${formatOrderDuration(avgLot)}</b></div><div class="stat station-stat"><small>Reprovações</small><b>${rej}</b></div><div class="stat station-stat"><small>Inconclusivos</small><b>${inc}</b></div>`;
   recent.innerHTML=rows.length?'<b>SESSÕES DA ESTAÇÃO</b>'+rows.slice().reverse().slice(0,30).map(r=>`<div class="station-run"><div class="station-run-main"><b>Venda ${esc(r.numero||'—')}</b><br><small>${esc(r.operator||'Operador não registrado')} • ${esc(new Date(r.startedAt).toLocaleString('pt-BR'))}</small></div><span>⏱ ${esc(formatOrderDuration(r.durationMs))}</span><span>✓ ${r.approvedLots||0} lotes</span><span>🔴 ${r.rejections||0}</span><span>🟠 ${r.inconclusive||0}</span></div>`).join(''):'<div class="muted" style="margin-top:10px">Nenhuma sessão encontrada neste filtro.</div>';
+  renderStationTeamPerformance(rows);
+}
+
+function renderStationTeamPerformance(rows){
+  const box=$('stationTeamPerformance'),target=$('stationTeamPerformanceTable');if(!box||!target)return;
+  const groups={};
+  (rows||[]).forEach(r=>{
+    const key=r.operatorId||r.operator||'sem-operador';
+    if(!groups[key])groups[key]={name:r.operator||'Operador não registrado',sessions:0,total:0,lots:0,rejections:0,inconclusive:0,attempts:0};
+    const g=groups[key];g.sessions++;g.total+=Number(r.durationMs)||0;g.lots+=Number(r.approvedLots)||0;g.rejections+=Number(r.rejections)||0;g.inconclusive+=Number(r.inconclusive)||0;g.attempts+=Number(r.attempts)||0;
+  });
+  const list=Object.values(groups).map(g=>({...g,avgOrder:g.sessions?g.total/g.sessions:0,avgLot:g.lots?g.total/g.lots:0})).sort((a,b)=>b.sessions-a.sessions||a.avgOrder-b.avgOrder);
+  box.classList.toggle('hide',!list.length);
+  if(!list.length){target.innerHTML='';return}
+  target.innerHTML=`<table class="performance-table"><thead><tr><th>#</th><th>Separador</th><th>Pedidos</th><th>Tempo médio/pedido</th><th>Tempo médio/lote</th><th>Lotes</th><th>Reprovações</th><th>Inconclusivos</th></tr></thead><tbody>${list.map((g,n)=>`<tr><td><span class="performance-rank">${n+1}</span></td><td><b>${esc(g.name)}</b></td><td>${g.sessions}</td><td>${esc(formatOrderDuration(g.avgOrder))}</td><td>${esc(formatOrderDuration(g.avgLot))}</td><td>${g.lots}</td><td>${g.rejections}</td><td>${g.inconclusive}</td></tr>`).join('')}</tbody></table>`;
 }
 function exportStationMetricsCsv(){
   const rows=filteredStationMetricRows();if(!rows.length)return alert('Não há sessões neste filtro para exportar.');
