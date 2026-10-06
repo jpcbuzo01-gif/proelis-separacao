@@ -91,6 +91,9 @@ export default async (req) => {
     const fd=await req.formData();
     const photo=fd.get("photo");
     let visualCalibration=null;
+    let geometricBoreMeasurement=null;
+    const geometricBoreRaw=fd.get("geometric_bore_measurement");
+    try{geometricBoreMeasurement=geometricBoreRaw?JSON.parse(String(geometricBoreRaw)):null}catch{}
     const visualCalibrationRaw=fd.get("visual_calibration");
     try{visualCalibration=visualCalibrationRaw?JSON.parse(String(visualCalibrationRaw)) : null}catch{}
     const calibrationMmPerPixel=Number(visualCalibration?.mmPerPixel)||0;
@@ -264,14 +267,26 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.variant_exclusion_evidence)) d.variant_exclusion_evidence=[];
     if(!Array.isArray(d.bore_measurements)) d.bore_measurements=[];
 
+    // V10.39 — medição geométrica local tem prioridade absoluta sobre coordenadas estimadas pela IA.
+    d.geometric_measurement_received=!!(geometricBoreMeasurement?.ok);
+    if(expectedBoreMm && geometricBoreMeasurement?.ok && Array.isArray(geometricBoreMeasurement.measurements)){
+      const vals=geometricBoreMeasurement.measurements.slice(0,expected.qty).map(m=>Number(m.mm)).filter(Number.isFinite);
+      if(vals.length>=expected.qty){
+        d.bore_measurements=[]; // impede uso das coordenadas estimadas pela IA.
+        d.geometric_bore_mm=vals.map(x=>Number(x.toFixed(2)));
+      }
+    }
+
     // V10.35: medição dimensional determinística pela câmera fixa calibrada.
     // A IA localiza apenas as bordas internas esquerda/direita em coordenadas 0..1000; o servidor converte para mm.
     d.visual_calibration_used=false;
     d.measured_bore_mm=[];
     if(calibratedWidthMm && expectedBoreMm){
-      const usable=d.bore_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_left))&&Number.isFinite(Number(m.x_right)))
-        .map(m=>Math.abs(Number(m.x_right)-Number(m.x_left))/1000*calibratedWidthMm)
-        .filter(mm=>mm>5&&mm<40);
+      const usable=(Array.isArray(d.geometric_bore_mm)&&d.geometric_bore_mm.length>=expected.qty
+        ? d.geometric_bore_mm
+        : d.bore_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_left))&&Number.isFinite(Number(m.x_right)))
+          .map(m=>Math.abs(Number(m.x_right)-Number(m.x_left))/1000*calibratedWidthMm))
+        .map(Number).filter(mm=>mm>5&&mm<40);
       d.measured_bore_mm=usable.map(mm=>Number(mm.toFixed(2)));
       if(usable.length>=Math.max(1,expected.qty)){
         const expectedVariant=expectedBoreMm===18?56:48;
@@ -309,6 +324,14 @@ Responda APENAS JSON válido:
         d.reason=`Calibração ativa e vista superior aceita, porém a análise não marcou as duas bordas internas do furo central em todas as ${expected.qty} unidades. Mantenha as peças planas como estão, com os furos centrais livres e sem objetos sobre eles; não é necessário mudar o ângulo da câmera.`;
         d.measurement_failure="bore_edges_not_returned";
       }
+    }
+
+    // V10.39 — para 48/56, NÃO permitir aprovação baseada em coordenadas da IA.
+    // A dimensão crítica precisa vir do detector geométrico local.
+    if(expectedBoreMm && d.status==="APROVADO" && !d.geometric_measurement_received){
+      d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+      d.measurement_failure="geometric_bore_required";
+      d.reason="A medição geométrica determinística do furo central não foi obtida. Para 48/56, a IA sozinha não pode aprovar.";
     }
 
     // V10.37.2 — saneia qualquer orientação lateral legada.
@@ -399,7 +422,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+per_unit_bore_guard_v10_38";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+local_geometric_bore_detector_v10_39";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
