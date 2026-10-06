@@ -194,6 +194,7 @@ B) Existe alguma contradição com o cadastro ou com a foto oficial?
 C) A evidência visível confirma uma característica decisiva do cadastro ou, para produto sem marcação, a geometria/detalhes estruturais coincidem claramente com a foto oficial?
 D) A marca/modelo realmente existe impresso na peça? Se não existir, não exija sua leitura.
 Se uma característica decisiva estiver claramente confirmada, OU a peça sem marcação tiver correspondência estrutural clara com a foto oficial, e não houver contradições, APROVADO é permitido.
+EXCEÇÃO CRÍTICA: nas variantes dimensionais 48/56 deste centrífugo/platinado, semelhança visual NUNCA basta para APROVAR. A aprovação final depende obrigatoriamente da medição calibrada do furo central feita pelo servidor.
 Se não houver evidência suficiente para diferenciar variantes, INCONCLUSIVO.
 Se houver característica incompatível, REPROVADO.
 
@@ -300,6 +301,22 @@ Responda APENAS JSON válido:
       }
     }
 
+    // V10.37.1 — TRAVA DIMENSIONAL CRÍTICA.
+    // Para variantes 48/56, APROVADO só pode existir após medição calibrada válida.
+    // Nunca aceitar apenas semelhança visual/foto oficial quando a diferença decisiva é 16 x 18 mm.
+    if(expectedBoreMm && d.status==="APROVADO" && !d.visual_calibration_used){
+      d.status="INCONCLUSIVO";
+      d.error_type="inconclusivo";
+      d.measurement_failure=d.measurement_failure||"calibrated_dimension_required";
+      d.reason=`A variante ${expectedBoreMm===18?"56":"48"} exige confirmação dimensional calibrada do furo central (${expectedBoreMm} mm). A semelhança visual não é suficiente para aprovar.`;
+    }
+    if(expectedBoreMm && d.status==="APROVADO" && d.visual_calibration_used && !Number.isFinite(Number(d.measured_variant))){
+      d.status="INCONCLUSIVO";
+      d.error_type="inconclusivo";
+      d.measurement_failure="calibrated_dimension_required";
+      d.reason="A medição calibrada não classificou com segurança a variante 48/56. Não aprovar.";
+    }
+
     // V8.4: trava universal contra falso positivo.
     // Uma contradição explícita jamais pode terminar como APROVADO.
     if(d.status==="APROVADO" && d.contradictions.length){
@@ -354,7 +371,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_central_bore_auto_retry_v10_37";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_dimension_mandatory_guard_v10_37_1";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
