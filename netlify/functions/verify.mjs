@@ -136,6 +136,13 @@ Observações de separação: ${norm(catalog?.observacoes_separacao)}
 Calibração da câmera fixa: ${calibratedWidthMm?`ATIVA — largura total da imagem corresponde aproximadamente a ${calibratedWidthMm.toFixed(3)} mm no plano calibrado`:"não disponível"}
 Medida decisiva do FURO CENTRAL nesta família: ${expectedBoreMm?`${expectedBoreMm} mm (variante ${expectedBoreMm===18?"56":"48"})`:"não cadastrada/inferida"}
 
+REGRA ABSOLUTA DE POSICIONAMENTO 48/56:
+- Com expectedBoreMm definido e calibração ativa, a VISTA SUPERIOR da câmera fixa é o ângulo CORRETO.
+- PROIBIDO pedir para virar a peça, mostrar de lado, usar ângulo oblíquo ou mostrar comprimento/projeção de eixo.
+- Se os furos centrais estão inteiros na foto, NÃO use ângulo como motivo de INCONCLUSIVO.
+- Ignore qualquer regra geral sobre eixo lateral que conflite com esta regra.
+- A tarefa dimensional é somente localizar as bordas INTERNAS esquerda/direita do furo central.
+
 MEDIÇÃO VISUAL CALIBRADA DO FURO CENTRAL:
 - Quando a calibração estiver ATIVA e a medida decisiva do eixo estiver informada, localize a BORDA ESQUERDA e a BORDA DIREITA do círculo interno do FURO CENTRAL de CADA unidade na FOTO DO SEPARADOR.
 - A peça deve estar deitada/plana, vista de cima, no mesmo plano calibrado da balança, com o furo central totalmente visível.
@@ -301,6 +308,15 @@ Responda APENAS JSON válido:
       }
     }
 
+    // V10.37.2 — saneia qualquer orientação lateral legada.
+    if(expectedBoreMm && calibratedWidthMm){
+      const legacyAngle=/ângulo|angulo|lateral|obl[ií]qu|virar|vire|de lado|comprimento do eixo|proje[cç][aã]o do eixo/i.test(norm(d.reason));
+      if(d.status==="INCONCLUSIVO" && legacyAngle){
+        d.measurement_failure="bore_edges_not_returned";
+        d.reason=`Vista superior calibrada aceita. A leitura não marcou as bordas internas do furo central de todas as ${expected.qty} unidades. Mantenha as peças planas como estão; não mude o ângulo.`;
+      }
+    }
+
     // V10.37.1 — TRAVA DIMENSIONAL CRÍTICA.
     // Para variantes 48/56, APROVADO só pode existir após medição calibrada válida.
     // Nunca aceitar apenas semelhança visual/foto oficial quando a diferença decisiva é 16 x 18 mm.
@@ -371,7 +387,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_dimension_mandatory_guard_v10_37_1";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_top_view_lock_v10_37_2";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
