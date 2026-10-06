@@ -141,9 +141,11 @@ MEDIÇÃO VISUAL CALIBRADA DO FURO CENTRAL:
 - A peça deve estar deitada/plana, vista de cima, no mesmo plano calibrado da balança, com o furo central totalmente visível.
 - Para cada furo central claramente visível, devolva bore_measurements com x_base e x_tip em coordenadas horizontais normalizadas de 0 a 1000, onde 0 é a borda esquerda da FOTO DO SEPARADOR e 1000 a borda direita.
 - NÃO estime milímetros por conta própria. Apenas localize os pontos x_base/x_tip; o servidor fará a conversão determinística usando a calibração.
-- Se qualquer borda do furo estiver escondida, desfocada ou ambígua, marque usable:false.
-- Duas unidades exigem duas medições utilizáveis para uma decisão dimensional automática. Meça o DIÂMETRO INTERNO do furo, não o diâmetro externo do ressalto/corpo.
-- A vista de cima da câmera fixa é a posição PREFERIDA para medir o furo central.
+- Se o furo central estiver visível como na vista superior da estação, SEMPRE forneça x_left e x_right para cada unidade. Não devolva usable:false apenas por perspectiva/ângulo leve.
+- usable:false somente se uma das bordas internas estiver realmente oculta, cortada para fora da imagem ou impossível de localizar.
+- Duas unidades exigem duas medições. Meça o DIÂMETRO INTERNO do furo, não o diâmetro externo do ressalto/corpo.
+- A vista de cima da câmera fixa é a posição NORMAL e PREFERIDA. Não peça foto lateral/oblíqua para esta medição.
+- A tarefa aqui não é estimar milímetros: apenas marcar as bordas internas esquerda/direita. O servidor calcula os milímetros.
 
 REGRA UNIVERSAL DE APROVAÇÃO:
 - APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
@@ -269,7 +271,7 @@ Responda APENAS JSON válido:
         d.visual_calibration_used=true;
         d.measured_bore_median_mm=Number(median.toFixed(2));
         d.measured_bore_spread_mm=Number(spread.toFixed(2));
-        if(spread>1.2){
+        if(spread>1.6){
           d.status="INCONCLUSIVO";d.error_type="inconclusivo";
           d.reason=`Medições dos furos centrais não ficaram consistentes entre as unidades (${d.measured_bore_mm.join(" / ")} mm). Reposicione as peças deitadas e com os furos centrais totalmente visíveis.`;
         }else{
@@ -293,7 +295,8 @@ Responda APENAS JSON válido:
         }
       }else{
         d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.reason=`Calibração ativa, mas não foi possível localizar bordas esquerda e direita do furo central em todas as ${expected.qty} unidades. Deite as peças com os furos centrais totalmente visíveis.`;
+        d.reason=`Calibração ativa e vista superior aceita, porém a análise não marcou as duas bordas internas do furo central em todas as ${expected.qty} unidades. Mantenha as peças planas como estão, com os furos centrais livres e sem objetos sobre eles; não é necessário mudar o ângulo da câmera.`;
+        d.measurement_failure="bore_edges_not_returned";
       }
     }
 
@@ -351,7 +354,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_central_bore_measurement_v10_36";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_central_bore_repeatability_v10_36_1";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
