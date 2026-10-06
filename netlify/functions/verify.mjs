@@ -139,7 +139,10 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - A FOTO OFICIAL ajuda a localizar características e reconhecer o produto.
 - PRODUTOS SEM MARCAÇÃO VISÍVEL: algumas peças (ex.: centrífugos, tampas, ventoinhas e componentes moldados) podem não trazer marca, modelo ou código impressos. Nesses casos, NÃO exija texto inexistente e NÃO responda INCONCLUSIVO apenas porque marca/modelo não estão legíveis.
 - Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
-- Se a geometria e os detalhes físicos relevantes coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
+- ATENÇÃO A VARIANTES QUASE IDÊNTICAS: não trate “parecido com a foto” como suficiente quando pequenas dimensões físicas diferenciam modelos. Procure explicitamente diferenças de eixo, comprimento/altura do eixo, diâmetro, distância entre contatos, posição/altura de terminais, abas, furos, encaixes e proporções.
+- Para centrífugos e platinados, dê atenção especial ao TAMANHO/COMPRIMENTO DO EIXO e às proporções físicas. Exemplo operacional informado pela Proelis: variantes 56 e 48 podem ser visualmente muito semelhantes e o eixo da 56 é maior que o da 48. Não aprove uma delas sem evidência visual suficiente dessa diferença quando ela for necessária para distinguir a variante.
+- Use comparação RELATIVA com a foto oficial: proporção do eixo em relação ao corpo da peça, quanto o eixo projeta além do corpo e outros pontos geométricos repetíveis. Não invente medida em milímetros a partir de uma foto sem escala.
+- Se a geometria e os detalhes físicos DISCRIMINANTES coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
 - Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
 - Marca/modelo ausentes na própria peça devem retornar identified_brand/identified_model como null; ausência não é erro de marca/modelo.
 - O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
@@ -152,7 +155,8 @@ EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Esperado capacitor 30µF e foto mostra 25µF => REPROVADO/modelo.
 - Esperado peça de uma variante específica, mas o código/medida que diferencia as variantes não pode ser lido => INCONCLUSIVO.
 - Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
-- Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
+- Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais DISCRIMINANTES coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
+- Centrífugo/platinado 56 x 48: se a variante depende do eixo maior/menor, compare a projeção e proporção do eixo com a referência. Se isso não estiver claramente visível => INCONCLUSIVO, nunca aprove só pelo formato geral.
 - Peça sem marcação e foto oficial insuficiente para excluir uma variante visualmente semelhante => INCONCLUSIVO.
 
 REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
@@ -160,8 +164,8 @@ REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
 - "ZZ" NÃO é equivalente a DDU/2RS.
 
 Antes de escolher APROVADO, faça internamente esta checagem:
-A) Quais atributos visíveis identificam este produto?
-B) Existe alguma contradição com o cadastro?
+A) Quais atributos visíveis realmente DIFERENCIAM este produto de variantes parecidas? Para peças sem marcação, examine especialmente eixo, projeção do eixo, furos, encaixes e proporções.
+B) Existe alguma contradição com o cadastro ou com a foto oficial?
 C) A evidência visível confirma uma característica decisiva do cadastro ou, para produto sem marcação, a geometria/detalhes estruturais coincidem claramente com a foto oficial?
 D) A marca/modelo realmente existe impresso na peça? Se não existir, não exija sua leitura.
 Se uma característica decisiva estiver claramente confirmada, OU a peça sem marcação tiver correspondência estrutural clara com a foto oficial, e não houver contradições, APROVADO é permitido.
@@ -275,7 +279,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+unmarked_reference_match_v10_31";
+    d.validation_policy="explicit_code_guard_v8_4_2+discriminant_geometry_v10_32";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
