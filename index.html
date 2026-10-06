@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.22</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.30</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -495,6 +495,90 @@ body.station-operation #stationConfigDetails{display:none}
 .queue-rank{display:flex;justify-content:flex-end;align-items:center;gap:5px;margin:-2px 0 6px;font-size:8px;font-weight:900;color:#71828a}
 .queue-rank b{font-size:11px;color:#0878ad}
 @media(max-width:620px){.next-operational-action{align-items:flex-start;flex-direction:column}.next-operational-action button{width:100%}}
+
+/* V10.23 ação direta na recomendação */
+.next-action-buttons{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.next-action-buttons button{margin:0}
+@media(max-width:620px){.next-action-buttons{width:100%}.next-action-buttons button{flex:1;min-width:130px}}
+
+/* V10.24 capacidade operacional da equipe */
+.team-capacity{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:7px 0;padding:6px 8px;border-radius:7px;background:#f2f7f9;font-size:8px;font-weight:900;color:#526b76}
+.team-capacity b{font-size:8px;text-align:right}
+.team-capacity.available{background:#eef8f2;color:#287a49}
+.team-capacity.watch{background:#fff8df;color:#856000}
+.team-capacity.critical{background:#fff0ee;color:#b42318}
+
+/* V10.26 — foco total no separador */
+#picking .c.top{padding:10px 14px}
+.operator-item-card{padding:14px!important;border-top:4px solid var(--proelis-blue)!important}
+.operator-step{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#627983;font-size:10px;font-weight:900;letter-spacing:.04em}
+.operator-step b{color:var(--proelis-blue-dark);font-size:12px}
+.operator-main{text-align:center;padding-top:8px}
+.operator-main .ref{display:inline-block;margin:2px auto 7px;padding:8px 16px;border-radius:9px;background:#eaf7fc;color:#075f89;font-size:27px;font-weight:950;letter-spacing:.02em}
+.operator-main h2{margin:5px auto 10px;max-width:760px;font-size:21px;line-height:1.15;color:#26343d}
+#pickLocation{margin:8px auto!important;padding:11px 14px!important;border-radius:9px!important;background:#fff3cd!important;color:#664d03!important;border:1px solid #ffe69c!important;font-size:21px!important;font-weight:950!important}
+.operator-main .qty{margin:10px auto 8px;font-size:31px;line-height:1.05;color:#173f51}
+.operator-tech{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.operator-tech span{padding:5px 9px;border-radius:7px;background:#f3f6f7;color:#71828a;font-size:9px;font-weight:900}
+.operator-tech b{color:#344d58;font-size:11px}
+.operator-notes{max-width:760px;margin:10px auto 0;padding:9px 11px;text-align:left;border-radius:8px;background:#fff7df;color:#725500;border:1px solid #f4df9b}
+.operator-notes b{display:block;font-size:9px;letter-spacing:.04em;margin-bottom:2px}
+.operator-notes span{font-size:11px;font-weight:750}
+#catalogReference{margin-top:12px}
+#catalogReference> b{font-size:10px}
+#catalogReferencePhotos img{max-height:150px;object-fit:contain}
+@media(max-width:620px){
+ .operator-main .ref{font-size:24px}
+ .operator-main h2{font-size:18px}
+ #pickLocation{font-size:19px!important}
+ .operator-main .qty{font-size:28px}
+}
+
+/* V10.27 — ciclo físico automático visível */
+.auto-cycle-steps{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:9px 0 2px}
+.auto-cycle-steps span{display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:8px;background:#f0f3f4;color:#84949b;font-size:9px;font-weight:900;border:1px solid #e1e8eb}
+.auto-cycle-steps span b{font-size:9px}
+.auto-cycle-steps i{font-style:normal;color:#a8b5ba;font-weight:900}
+.auto-cycle-steps span.active{background:#eaf7fc;color:#075f89;border-color:#8fd0e8;box-shadow:0 0 0 2px rgba(16,168,223,.08)}
+.auto-cycle-steps span.done{background:#e8f7ef;color:#12683e;border-color:#a9dec0}
+.auto-cycle-steps span.bad{background:#fff0ef;color:#a62b22;border-color:#efb8b4}
+body.station-operation #autoCycleSteps{position:sticky;top:4px;z-index:5;background:#fff;padding:5px;border-radius:10px}
+@media(max-width:620px){.auto-cycle-steps{gap:3px}.auto-cycle-steps span{padding:5px 6px}.auto-cycle-steps i{font-size:8px}}
+
+/* V10.28 — orientação inteligente no inconclusivo */
+.retry-guidance{margin-top:12px;padding:11px 12px;border:2px solid #efc84a;border-radius:9px;background:#fff9e8;text-align:left;color:#684f00}
+.retry-guidance small{display:block;font-size:9px;font-weight:950;letter-spacing:.05em;margin-bottom:3px}
+.retry-guidance b{display:block;font-size:16px;margin-bottom:3px}
+.retry-guidance span{display:block;font-size:12px;font-weight:750;line-height:1.3}
+#stationState.inc{line-height:1.35}
+
+/* V10.29 — reprovação objetiva e ação corretiva */
+.rejection-correction{margin-top:12px;padding:11px 12px;border:2px solid #e7aaa5;border-radius:9px;background:#fff5f4;text-align:left;color:#8e251d}
+.rejection-correction small{display:block;font-size:9px;font-weight:950;letter-spacing:.05em;margin-bottom:3px}
+.rejection-correction b{display:block;font-size:16px;margin-bottom:3px}
+.rejection-correction span{display:block;font-size:12px;font-weight:750;line-height:1.3}
+
+/* V10.30 — fechamento operacional do pedido */
+.station-complete-card{text-align:center;border:3px solid #25a55b!important;padding:26px!important;max-width:780px;margin:22px auto!important}
+.station-complete-check{width:66px;height:66px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;border-radius:50%;background:#e8f7ef;color:#16844a;font-size:40px;font-weight:950}
+.station-complete-kicker{font-size:10px;font-weight:950;letter-spacing:.1em;color:#5b7b69}
+.station-complete-card h1{margin:3px 0;color:#12683e;font-size:32px}
+.station-complete-order{font-size:23px;font-weight:950;color:#26343d}
+.station-complete-client{margin-top:2px;color:#64777f;font-size:13px;font-weight:750}
+.station-complete-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
+.station-complete-grid>div{padding:12px 8px;border-radius:9px;background:#f5f8f9;border:1px solid #e0e9ec}
+.station-complete-grid span,.station-complete-quality span{display:block;font-size:8px;font-weight:950;letter-spacing:.04em;color:#70838b}
+.station-complete-grid b{display:block;margin-top:3px;font-size:17px;color:#26343d}
+.station-complete-quality{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.station-complete-quality>div{padding:12px;border-radius:9px}
+.station-complete-quality b{display:block;font-size:25px}
+.station-complete-quality .quality-ok{background:#fff0ef;color:#a62b22}
+.station-complete-quality .quality-inc{background:#fff7df;color:#805d00}
+.station-complete-quality .quality-ok span{color:#a62b22}
+.station-complete-quality .quality-inc span{color:#805d00}
+.station-complete-release{margin-top:12px;padding:11px;border-radius:9px;background:#e8f7ef;color:#12683e;font-size:12px;font-weight:900}
+.station-complete-back{margin-top:16px;min-width:220px}
+@media(max-width:620px){.station-complete-grid{grid-template-columns:1fr 1fr}.station-complete-card h1{font-size:27px}.station-complete-quality{grid-template-columns:1fr}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -502,7 +586,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.22</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.30</span></div>
   </div>
 </header><div class="w">
 
@@ -646,19 +730,22 @@ body.station-operation #stationConfigDetails{display:none}
  </section>
 
  <section id="stationComplete" class="view hide">
-  <div class="c" style="text-align:center;border:4px solid #22a447;padding:28px">
-    <div style="font-size:54px">✓</div>
-    <h1 style="margin:6px 0">PEDIDO CONFERIDO</h1>
-    <div id="stationCompleteOrder" style="font-size:22px;font-weight:800"></div>
-    <div id="stationCompleteStats" class="reference-box" style="margin-top:16px;text-align:left"></div>
-    <button id="stationCompleteBack" style="margin-top:16px">VOLTAR AOS PEDIDOS</button>
+  <div class="c station-complete-card">
+    <div class="station-complete-check">✓</div>
+    <div class="station-complete-kicker">CONFERÊNCIA FINALIZADA</div>
+    <h1>PEDIDO PRONTO</h1>
+    <div id="stationCompleteOrder" class="station-complete-order"></div>
+    <div id="stationCompleteClient" class="station-complete-client"></div>
+    <div id="stationCompleteStats" class="station-complete-grid"></div>
+    <div id="stationCompleteQuality" class="station-complete-quality"></div>
+    <div class="station-complete-release">✓ Todos os itens do pedido foram aprovados e registrados.</div>
+    <button id="stationCompleteBack" class="station-complete-back">VOLTAR AOS PEDIDOS</button>
   </div>
 </section>
 
 <section id="picking" class="view hide">
   <div class="c top"><div><b id="pickOrder"></b><div class="who" id="pickClient"></div></div><button id="backDash" class="secondary">VOLTAR</button></div>
-  <div id="itemCard" class="c"><b id="step"></b><div class="bar"><i id="prog"></i></div><p class="muted">Separe somente este item.</p><div class="ref" id="ref"></div><h2 id="desc"></h2><p>Marca: <b id="brand"></b> • Modelo: <b id="model"></b></p><div class="qty" id="qty"></div>
-  <div id="pickLocation" class="hide" style="margin:8px auto;padding:10px 14px;border-radius:12px;background:#fff3cd;font-size:20px;font-weight:900"></div>
+  <div id="itemCard" class="c operator-item-card"><div class="operator-step"><b id="step"></b><span>SEPARE SOMENTE ESTE ITEM</span></div><div class="bar"><i id="prog"></i></div><div class="operator-main"><div class="ref" id="ref"></div><h2 id="desc"></h2><div id="pickLocation" class="hide"></div><div class="qty" id="qty"></div><div class="operator-tech"><span>MARCA <b id="brand"></b></span><span>MODELO <b id="model"></b></span></div><div id="pickNotes" class="operator-notes hide"></div></div>
   <div id="catalogReference" class="reference-box hide">
     <b>REFERÊNCIA VISUAL DO CATÁLOGO</b>
     <div id="catalogReferenceMeta" class="small muted" style="margin:5px 0 10px"></div>
@@ -671,7 +758,9 @@ body.station-operation #stationConfigDetails{display:none}
       <button id="stationStart" type="button">INICIAR ESTAÇÃO</button>
       <button id="stationStop" class="secondary hide" type="button">PARAR ESTAÇÃO</button>
     </div>
-    <div id="stationState" style="margin-top:12px;padding:18px;border-radius:14px;background:#f3f4f6;font-size:20px;font-weight:900">MODO MANUAL</div><div class="station-progress"><span id="stationProgress"></span></div><div id="stationIdentity" class="hide" style="margin-top:8px;padding:10px 12px;border:2px solid #e2e6ea;border-radius:12px;background:#fff">
+    <div id="stationState" style="margin-top:12px;padding:18px;border-radius:14px;background:#f3f4f6;font-size:20px;font-weight:900">MODO MANUAL</div><div id="autoCycleSteps" class="auto-cycle-steps">
+<span data-cycle="weight">1 <b>PESO</b></span><i>→</i><span data-cycle="photo">2 <b>FOTO</b></span><i>→</i><span data-cycle="ai">3 <b>IA</b></span><i>→</i><span data-cycle="remove">4 <b>RETIRAR</b></span><i>→</i><span data-cycle="zero">5 <b>ZERO</b></span>
+</div><div class="station-progress"><span id="stationProgress"></span></div><div id="stationIdentity" class="hide" style="margin-top:8px;padding:10px 12px;border:2px solid #e2e6ea;border-radius:12px;background:#fff">
       <div id="stationIdentityMain" style="font-size:19px;font-weight:950"></div>
       <div id="stationIdentitySub" class="small muted" style="margin-top:3px"></div>
     </div>
@@ -909,13 +998,16 @@ function renderDashboardOrders(){
     if(next){
       const reason=orderActionReason(next);
       const box=document.createElement('div');box.id='nextOperationalAction';box.className='next-operational-action';
-      box.innerHTML=`<div><small>PRÓXIMA AÇÃO RECOMENDADA</small><b>Venda ${esc(next.numero_venda)}${reason?' • '+esc(reason.text):''}</b><span>${esc(next.assigned?.nome||'Sem responsável')} • ${esc(next.cliente||'Cliente não informado')}</span></div><button data-next-order="${esc(next.numero_venda)}">VER PEDIDO</button>`;
+      const actionLabel=!next.assigned_to?'ATRIBUIR AGORA':(operationalPriority(next)>=3?'TRANSFERIR / REBALANCEAR':'VER PEDIDO');
+      box.innerHTML=`<div><small>PRÓXIMA AÇÃO RECOMENDADA</small><b>Venda ${esc(next.numero_venda)}${reason?' • '+esc(reason.text):''}</b><span>${esc(next.assigned?.nome||'Sem responsável')} • ${esc(next.cliente||'Cliente não informado')}</span></div><div class="next-action-buttons"><button class="secondary" data-next-order="${esc(next.numero_venda)}">VER PEDIDO</button>${(!next.assigned_to||operationalPriority(next)>=3)?`<button data-next-assign="${next.id}">${actionLabel}</button>`:''}</div>`;
       $('ordersList').before(box);
       box.querySelector('[data-next-order]').onclick=()=>{
         $('orderSearch').value=next.numero_venda||'';$('separatorFilter').value='';$('statusFilter').value='';
         priorityMode=false;const fb=$('focusQueueBtn');if(fb){fb.classList.remove('active');fb.textContent='MODO PRIORIDADE'}
         renderDashboardOrders();$('ordersList')?.scrollIntoView({behavior:'smooth',block:'start'});
       };
+      const assignBtn=box.querySelector('[data-next-assign]');
+      if(assignBtn)assignBtn.onclick=()=>quickAssign(next.id);
     }
   }
   $('ordersList').innerHTML=rows.length?rows.map((o,idx)=>`<div class="order">${(sort==='risk'||priorityMode)&&o.status!=='concluido'&&o.status!=='cancelado'?`<div class="queue-rank"><span>PRIORIDADE DA FILA</span><b>#${idx+1}</b></div>`:''}<div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div>${orderSlaInfo(o)?`<div class="order-sla ${orderSlaInfo(o).level}" data-order-sla="${o.id}"><div class="order-sla-head"><span>SLA OPERACIONAL • ${orderSlaInfo(o).label}</span><b>${orderSlaInfo(o).next}</b></div><div class="order-sla-track"><i style="width:${orderSlaInfo(o).pct}%"></i></div></div>`:''}${orderActionReason(o)?`<div class="order-action-reason ${orderActionReason(o).level}"><div><b>${orderActionReason(o).text}</b><span>${orderActionReason(o).detail}</span></div>${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-action-transfer="${o.id}">TRANSFERIR</button>`:''}</div>`:''}<div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}" title="Alterar responsável com registro no histórico">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
@@ -940,21 +1032,21 @@ function renderTeamOverview(){
   dashboardOrders.forEach(o=>{
     if(!o.assigned_to)return;
     const name=o.assigned?.nome||'Sem nome';
-    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,waiting:0,doneToday:0,preventive:0,attention:0,urgent:0,activeOrders:[]});
+    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,waiting:0,doneToday:0,preventive:0,attention:0,urgent:0,riskPoints:0,activeOrders:[]});
     const p=people.get(o.assigned_to);
     if(o.status==='em_separacao'){p.separating++;p.activeOrders.push(o)}
     if(o.status==='aguardando')p.waiting++;
     if(o.status==='aguardando'||o.status==='em_separacao'){
       const h=orderElapsed(o)/3600000,pri=operationalPriority(o);
-      if(pri>=4)p.urgent++;
-      else if(pri===3)p.attention++;
-      else if((o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2))p.preventive++;
+      if(pri>=4){p.urgent++;p.riskPoints+=4}
+      else if(pri===3){p.attention++;p.riskPoints+=2}
+      else if((o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2)){p.preventive++;p.riskPoints+=1}
     }
     if(o.status==='concluido'&&orderCompletionDate(o)===today)p.doneToday++;
   });
   const arr=[...people.values()].sort((a,b)=>(b.separating+b.waiting)-(a.separating+a.waiting)||b.doneToday-a.doneToday||a.name.localeCompare(b.name));
   const loads=arr.map(p=>p.separating+p.waiting),minLoad=loads.length?Math.min(...loads):0,maxLoad=loads.length?Math.max(...loads):0;
-  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>{const load=p.separating+p.waiting,loadClass=load===0?'free':load<=2?'normal':load<=4?'busy':'overload',loadText=load===0?'LIVRE':load<=2?'NORMAL':load<=4?'OCUPADO':'SOBRECARGA';return `<div class="team-card ${load===0?'no-work':''} ${load===minLoad?'best-load':''}"><div class="team-card-head"><div class="team-name">${esc(p.name)}</div><div class="team-badges">${load===minLoad&&arr.length>1?'<span class="balance-badge">PRÓXIMO PEDIDO</span>':''}<span class="workload-badge ${loadClass}">${loadText}</span></div></div><div class="team-numbers team-numbers-3"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric waiting"><small>Aguardando</small><b>${p.waiting}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div><div class="team-workload"><span>Carga atual</span><b>${load} pedido${load===1?'':'s'}</b></div>${p.preventive||p.attention||p.urgent?`<div class="team-risk-strip">${p.preventive?`<button class="risk preventive" data-team-risk="preventive" data-team-separator="${p.id}">${p.preventive} preventivo${p.preventive===1?'':'s'}</button>`:''}${p.attention?`<button class="risk attention" data-team-risk="attention" data-team-separator="${p.id}">${p.attention} atenção</button>`:''}${p.urgent?`<button class="risk urgent" data-team-risk="urgent" data-team-separator="${p.id}">${p.urgent} urgente${p.urgent===1?'':'s'}</button>`:''}</div>`:'<div class="team-risk-strip"><span class="risk ok">SEM ALERTAS</span></div>'}${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`}).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
+  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>{const load=p.separating+p.waiting,loadClass=load===0?'free':load<=2?'normal':load<=4?'busy':'overload',loadText=load===0?'LIVRE':load<=2?'NORMAL':load<=4?'OCUPADO':'SOBRECARGA';return `<div class="team-card ${load===0?'no-work':''} ${load===minLoad?'best-load':''}"><div class="team-card-head"><div class="team-name">${esc(p.name)}</div><div class="team-badges">${load===minLoad&&p.riskPoints<2&&arr.length>1?'<span class="balance-badge">PRÓXIMO PEDIDO</span>':''}<span class="workload-badge ${loadClass}">${loadText}</span></div></div><div class="team-numbers team-numbers-3"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric waiting"><small>Aguardando</small><b>${p.waiting}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div><div class="team-workload"><span>Carga atual</span><b>${load} pedido${load===1?'':'s'}</b></div><div class="team-capacity ${p.riskPoints>=4?'critical':p.riskPoints>=2?'watch':load===minLoad?'available':'stable'}"><span>${p.riskPoints>=4?'EVITAR NOVOS PEDIDOS':p.riskPoints>=2?'MONITORAR CARGA':load===minLoad?'PODE RECEBER PEDIDO':'CARGA ESTÁVEL'}</span><b>${p.riskPoints?`${p.riskPoints} ponto${p.riskPoints===1?'':'s'} de risco`:'sem risco operacional'}</b></div>${p.preventive||p.attention||p.urgent?`<div class="team-risk-strip">${p.preventive?`<button class="risk preventive" data-team-risk="preventive" data-team-separator="${p.id}">${p.preventive} preventivo${p.preventive===1?'':'s'}</button>`:''}${p.attention?`<button class="risk attention" data-team-risk="attention" data-team-separator="${p.id}">${p.attention} atenção</button>`:''}${p.urgent?`<button class="risk urgent" data-team-risk="urgent" data-team-separator="${p.id}">${p.urgent} urgente${p.urgent===1?'':'s'}</button>`:''}</div>`:'<div class="team-risk-strip"><span class="risk ok">SEM ALERTAS</span></div>'}${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`}).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
   $('teamOverviewGrid').querySelectorAll('[data-team-risk]').forEach(btn=>btn.onclick=()=>{
     const sepId=btn.dataset.teamSeparator,risk=btn.dataset.teamRisk;
     priorityMode=false;
@@ -1546,6 +1638,48 @@ function updateStationCycle(){
   $('stationCycle').innerHTML=`ITEM <b>${i+1}/${items.length}</b> • REF. <b>${esc(x.referencia)}</b><br>Conferidas: <b>${confirmed}/${x.quantidade}</b> • Lote atual: <b>${batch}</b> un.${station.retryCount?` • Tentativa: <b>${station.retryCount+1}</b>`:''}`;
 }
 function stationLast(text){if($('stationLast'))$('stationLast').textContent='Última conferência: '+text}
+function inconclusiveGuidance(d,x,batchQty){
+  const reason=String(d?.reason||'').toLowerCase();
+  const markings=Array.isArray(d?.visible_markings)?d.visible_markings:[d?.visible_markings].filter(Boolean);
+  const model=String(d?.identified_model||'').trim(),brand=String(d?.identified_brand||'').trim();
+  if(reason.includes('quant')||d?.identified_quantity==null)return {title:'MOSTRE TODAS AS PEÇAS',text:`Coloque as ${batchQty} unidades separadas, sem sobreposição, totalmente dentro do enquadramento.`};
+  if(reason.includes('marca')||!brand)return {title:'MOSTRE A MARCA',text:'Vire a peça ou embalagem para a marca ficar legível e tire uma nova foto.'};
+  if(reason.includes('modelo')||reason.includes('código')||reason.includes('codigo')||!model||!markings.length)return {title:'MOSTRE O CÓDIGO / MODELO',text:'Posicione a gravação, etiqueta ou código do produto voltado para a câmera e aproxime dentro da área indicada.'};
+  if(reason.includes('escuro')||reason.includes('luz')||reason.includes('reflex')||reason.includes('brilho'))return {title:'MELHORE A ILUMINAÇÃO',text:'Evite sombra ou reflexo sobre a peça e tire uma nova foto.'};
+  if(reason.includes('desfoc')||reason.includes('foco')||reason.includes('borr'))return {title:'FOTO MAIS NÍTIDA',text:'Mantenha a peça parada e dentro do centro do enquadramento antes da nova foto.'};
+  return {title:'NOVA FOTO NECESSÁRIA',text:'Deixe o produto inteiro visível, com marca e código/modelo voltados para a câmera, sem sobrepor as peças.'};
+}
+function rejectionCorrection(d,x,batchQty){
+  const et=String(d?.error_type||'');
+  if(et==='quantidade'){
+    const seen=Number(d?.identified_quantity);
+    return {title:'CORRIJA A QUANTIDADE',text:Number.isFinite(seen)?`Esperado: ${batchQty} un. • Identificado: ${seen} un. Retire ou complete as peças e confira novamente.`:`O lote deve ter exatamente ${batchQty} unidade${batchQty===1?'':'s'}. Organize todas visíveis e confira novamente.`};
+  }
+  if(et==='modelo'){
+    const got=d?.detected_conflicting_code||d?.identified_model||'outro modelo';
+    return {title:'TROQUE PELO MODELO CORRETO',text:`Esperado: ${x.modelo||x.descricao||x.referencia}. Identificado: ${got}. Retire o item incorreto antes de tentar novamente.`};
+  }
+  if(et==='marca')return {title:'TROQUE PELA MARCA CORRETA',text:`Esperado: ${x.marca||'marca cadastrada'}. Identificado: ${d?.identified_brand||'outra marca'}.`};
+  if(et==='produto')return {title:'TROQUE O PRODUTO',text:`O produto fotografado não corresponde à REF. ${x.referencia}. Retire-o e pegue o item indicado na tela.`};
+  return null;
+}
+function renderRejectionCorrection(d,x,batchQty){
+  if(!d||String(d.status||'').toLowerCase()!=='reprovado')return '';
+  const g=rejectionCorrection(d,x,batchQty);if(!g)return '';
+  return `<div class="rejection-correction"><small>O QUE FAZER AGORA</small><b>${esc(g.title)}</b><span>${esc(g.text)}</span></div>`;
+}
+function renderRetryGuidance(d,x,batchQty){
+  if(!d||String(d.status||'').toLowerCase()!=='inconclusivo')return '';
+  const g=inconclusiveGuidance(d,x,batchQty);
+  return `<div class="retry-guidance"><small>COMO CORRIGIR A PRÓXIMA FOTO</small><b>${esc(g.title)}</b><span>${esc(g.text)}</span></div>`;
+}
+
+function setAutoCycleStep(step,state='active'){
+  document.querySelectorAll('#autoCycleSteps [data-cycle]').forEach(el=>{el.classList.remove('active','done','bad');});
+  const order=['weight','photo','ai','remove','zero'],idx=order.indexOf(step);
+  order.forEach((k,n)=>{const el=document.querySelector(`#autoCycleSteps [data-cycle="${k}"]`);if(!el)return;if(n<idx)el.classList.add('done');else if(n===idx)el.classList.add(state);});
+}
+
 
 
 const STATION_CFG_KEY='proelis_station_config_v91';
@@ -1704,7 +1838,7 @@ async function startStation(){
     const cameraId=$('cameraDevice')?.value||'';
     station.stream=await navigator.mediaDevices.getUserMedia({video:cameraId?{deviceId:{exact:cameraId},width:{ideal:1920},height:{ideal:1080}}:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
     $('stationVideo').srcObject=station.stream;$('stationVideo').classList.remove('hide');$('stationVideoStage')?.classList.remove('hide');
-    station.active=true;station.phase='waiting';station.startedAt=station.startedAt||Date.now();if(!station.metricRun)stationMetricStart();setOperationMode(true);station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
+    station.active=true;station.phase='waiting';setAutoCycleStep('weight');station.startedAt=station.startedAt||Date.now();if(!station.metricRun)stationMetricStart();setOperationMode(true);station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
     $('stationStart').classList.add('hide');$('stationStop').classList.remove('hide');
     setStationState(stationPromptPlace(),'wait');
     $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando balança';
@@ -1739,11 +1873,11 @@ async function stationAnalyzeStableWeight(measured){
     if(cfg.required&&(measured<cfg.min||measured>cfg.max)){
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_reprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g`});
       station.retryCount++;station.rejectedAttempts++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
-      setStationState('🔴 PESO INCORRETO — RETIRE E TENTE NOVAMENTE','bad');station.awaitZero=true;station.processing=false;
+      setAutoCycleStep('remove','bad');setStationState('🔴 PESO INCORRETO — RETIRE E TENTE NOVAMENTE','bad');station.awaitZero=true;station.processing=false;
       if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
       return;
     }
-    setStationState('🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
+    setAutoCycleStep('photo');setStationState('🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
     const captureDelay=Math.max(250,Number($('autoCaptureDelay')?.value||650));
     setStationState(`🔵 PESO ESTÁVEL — FOTO AUTOMÁTICA EM ${(captureDelay/1000).toFixed(2).replace('.',',')} s...`,'analyze');
     await new Promise(r=>setTimeout(r,captureDelay));
@@ -1757,14 +1891,14 @@ async function stationAnalyzeStableWeight(measured){
     if(cfg.required){$('weightReading').value=measured;weightApproved=true;
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_aprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g • tolerância ±${cfg.tol}%`});
     }
-    setStationState('🔵 FOTO CAPTURADA — IA CONFERINDO PRODUTO...','analyze');
+    setAutoCycleStep('ai');setStationState('🔵 FOTO CAPTURADA — IA CONFERINDO PRODUTO...','analyze');
     await $('verify').onclick();
     stationMetricAttempt(window.__lastVerifyResult||{});
     setTimeout(()=>{
       if(!station.active)return;
       if(visualApproved&&(!cfg.required||weightApproved)){
         station.pendingApproval={x,batchQty};stationLast(`REF. ${x.referencia} • aprovado • ${measured.toFixed(1)} g`);
-        setStationState('🟢 CORRETO — RETIRE O PRODUTO','ok');
+        setAutoCycleStep('remove');setStationState('🟢 CORRETO — RETIRE O PRODUTO','ok');
         station.awaitZero=true;
         if($('stationScaleStatus'))$('stationScaleStatus').innerHTML=(!$('weightMode')||$('weightMode').value==='simulacao')?'<b>Produto aprovado.</b> Simulando retirada automática...':'<b>Produto aprovado.</b> Retire o produto; aguardando retorno real da balança a zero.';
         // Em simulação, representa automaticamente a balança retornando a zero.
@@ -1776,8 +1910,10 @@ async function stationAnalyzeStableWeight(measured){
       }else{
         station.pendingApproval=null;station.retryCount++;station.rejectedAttempts++;updateStationCycle();
         const et=(window.__lastVerifyResult?.error_type||'inconclusivo');
-        const stationMsg=et==='modelo'?'🔴 MODELO / ESPECIFICAÇÃO INCORRETA — RETIRE':et==='quantidade'?'🔴 QUANTIDADE INCORRETA — RETIRE':et==='marca'?'🔴 MARCA INCORRETA — RETIRE':et==='produto'?'🔴 PRODUTO INCORRETO — RETIRE':'🟠 NÃO FOI POSSÍVEL CONFIRMAR — RETIRE E TENTE NOVAMENTE';
-        setStationState(stationMsg,et==='inconclusivo'?'inc':'bad');
+        let stationMsg=et==='modelo'?'🔴 MODELO / ESPECIFICAÇÃO INCORRETA — RETIRE':et==='quantidade'?'🔴 QUANTIDADE INCORRETA — RETIRE':et==='marca'?'🔴 MARCA INCORRETA — RETIRE':et==='produto'?'🔴 PRODUTO INCORRETO — RETIRE':'🟠 NÃO FOI POSSÍVEL CONFIRMAR — RETIRE E TENTE NOVAMENTE';
+        if(et==='inconclusivo'){const g=inconclusiveGuidance(window.__lastVerifyResult,x,batchQty);stationMsg=`🟠 ${g.title} — ${g.text} • RETIRE E TENTE NOVAMENTE`}
+        else{const g=rejectionCorrection(window.__lastVerifyResult,x,batchQty);if(g)stationMsg=`🔴 ${g.title} — ${g.text}`;}
+        setAutoCycleStep('remove',et==='inconclusivo'?'active':'bad');setStationState(stationMsg,et==='inconclusivo'?'inc':'bad');
         station.awaitZero=true;
         stationLast(`REF. ${x.referencia} • tentativa ${station.retryCount} não aprovada`);
         if(!$('weightMode') || $('weightMode').value==='simulacao'){
@@ -1800,6 +1936,7 @@ function feedStationWeight(g){
   const ZERO=2;
   if(station.awaitZero){
     if(Math.abs(g)<=ZERO){
+      setAutoCycleStep('zero');
       const pending=station.pendingApproval;
       station.pendingApproval=null;station.awaitZero=false;station.weights=[];station.stableSince=0;
       if(pending){
@@ -1811,14 +1948,14 @@ function feedStationWeight(g){
           if(station.active && currentOrder && i<items.length){
             station.retryCount=0;updateStationCycle();
             if($('stationScaleStatus'))$('stationScaleStatus').textContent='MODO SIMULAÇÃO • aguardando próximo lote/item.';
-            setStationState('🟡 COLOQUE O PRÓXIMO LOTE / ITEM NA BALANÇA','wait');
+            setAutoCycleStep('weight');setStationState('🟡 COLOQUE O PRÓXIMO LOTE / ITEM NA BALANÇA','wait');
           }
         }).catch(e=>{
           station.processing=false;
           setStationState('🟠 ERRO AO FINALIZAR ITEM','inc');
           if($('stationSensors'))$('stationSensors').textContent=e.message||String(e)
         });
-      }else{station.lastTriggerAt=0;station.weights=[];updateStationCycle();setStationState('🟡 TENTE NOVAMENTE — COLOQUE O PRODUTO NA BALANÇA','wait')}
+      }else{station.lastTriggerAt=0;station.weights=[];updateStationCycle();setAutoCycleStep('weight');setStationState('🟡 TENTE NOVAMENTE — COLOQUE O PRODUTO NA BALANÇA','wait')}
     }
     return;
   }
@@ -1917,12 +2054,26 @@ function formatElapsed(ms){
   const s=Math.max(0,Math.round(ms/1000)),m=Math.floor(s/60),r=s%60;
   return m?`${m} min ${r} s`:`${r} s`;
 }
-function showStationComplete(){
+async function showStationComplete(){
   const elapsed=station.startedAt?formatElapsed(Date.now()-station.startedAt):'—';
+  const approvedLots=station.approvedLots,retryTotal=station.rejectedAttempts;
+  let rejected=0,inconclusive=0;
+  try{
+    const {data}=await db.from('verification_attempts').select('resultado').eq('order_id',currentOrder.id);
+    (data||[]).forEach(a=>{if(a.resultado==='reprovado')rejected++;else if(a.resultado==='inconclusivo')inconclusive++});
+  }catch{}
   stopStation();
-  const orderEl=$('stationCompleteOrder'),statsEl=$('stationCompleteStats');
-  if(orderEl)orderEl.textContent=currentOrder?.numero?`Pedido ${currentOrder.numero}`:'Pedido finalizado';
-  if(statsEl)statsEl.innerHTML=`<b>Operador:</b> ${esc(profile?.nome||session?.user?.email||'—')}<br><b>Itens do pedido:</b> ${items.length}<br><b>Lotes aprovados:</b> ${station.approvedLots}<br><b>Tentativas reprovadas/inconclusivas:</b> ${station.rejectedAttempts}<br><b>Tempo de conferência:</b> ${esc(elapsed)}`;
+  const orderEl=$('stationCompleteOrder'),clientEl=$('stationCompleteClient'),statsEl=$('stationCompleteStats'),qualityEl=$('stationCompleteQuality');
+  if(orderEl)orderEl.textContent=currentOrder?.numero_venda?`VENDA ${currentOrder.numero_venda}`:(currentOrder?.numero?`PEDIDO ${currentOrder.numero}`:'PEDIDO FINALIZADO');
+  if(clientEl)clientEl.textContent=currentOrder?.cliente||'';
+  if(statsEl)statsEl.innerHTML=`
+    <div><span>ITENS</span><b>${items.length}</b></div>
+    <div><span>LOTES APROVADOS</span><b>${approvedLots}</b></div>
+    <div><span>TEMPO</span><b>${esc(elapsed)}</b></div>
+    <div><span>OPERADOR</span><b>${esc(profile?.nome||session?.user?.email||'—')}</b></div>`;
+  if(qualityEl)qualityEl.innerHTML=`
+    <div class="quality-ok"><b>${rejected}</b><span>ERRO${rejected===1?'':'S'} EVITADO${rejected===1?'':'S'} ANTES DA EXPEDIÇÃO</span></div>
+    <div class="quality-inc"><b>${inconclusive}</b><span>INCONCLUSIVO${inconclusive===1?'':'S'} / NOVA FOTO</span></div>`;
   if($('stationComplete'))show('stationComplete');else{show('dashboard');loadDashboard()}
 }
 async function finishApprovedBatch(x,batchQty){
@@ -1936,11 +2087,11 @@ async function finishApprovedBatch(x,batchQty){
 }
 
 async function loadReferenceForPick(ref){
-  $('catalogReference').classList.add('hide');$('catalogReferencePhotos').innerHTML='';if($('pickLocation'))$('pickLocation').classList.add('hide');
+  $('catalogReference').classList.add('hide');$('catalogReferencePhotos').innerHTML='';if($('pickLocation'))$('pickLocation').classList.add('hide');if($('pickNotes')){$('pickNotes').innerHTML='';$('pickNotes').classList.add('hide')}
   const {data:p}=await db.from('products').select('*').eq('referencia',String(ref)).eq('ativo',true).maybeSingle();
   if(!p)return null;
   currentPickProduct=p;updateStationIdentity();
-  $('catalogReferenceMeta').textContent=[p.marca,p.modelo,p.medidas,p.localizacao_estoque?('Local: '+p.localizacao_estoque):''].filter(Boolean).join(' • ');if($('pickLocation')){if(p.localizacao_estoque){$('pickLocation').textContent='📍 LOCAL: '+p.localizacao_estoque;$('pickLocation').classList.remove('hide')}else $('pickLocation').classList.add('hide')}updateStationIdentity();
+  $('catalogReferenceMeta').textContent=[p.marca,p.modelo,p.medidas,p.localizacao_estoque?('Local: '+p.localizacao_estoque):''].filter(Boolean).join(' • ');if($('pickLocation')){if(p.localizacao_estoque){$('pickLocation').textContent='📍 PEGAR EM: '+p.localizacao_estoque;$('pickLocation').classList.remove('hide')}else $('pickLocation').classList.add('hide')}if($('pickNotes')){if(p.observacoes_separacao){$('pickNotes').innerHTML='<b>ATENÇÃO NA SEPARAÇÃO</b><span>'+esc(p.observacoes_separacao)+'</span>';$('pickNotes').classList.remove('hide')}else{$('pickNotes').innerHTML='';$('pickNotes').classList.add('hide')}}updateStationIdentity();
   const {data:pics}=await db.from('product_images').select('*').eq('product_id',p.id).order('principal',{ascending:false}).order('ordem').limit(6);
   const urls=[];
   for(const pic of pics||[]){const {data:s}=await db.storage.from('product-images').createSignedUrl(pic.storage_path,3600);if(s?.signedUrl)urls.push(s.signedUrl)}
@@ -1949,19 +2100,35 @@ async function loadReferenceForPick(ref){
   return p;
 }
 
+function separatorCapacityMap(activeOrders){
+  const map={};
+  (activeOrders||[]).forEach(o=>{
+    if(!o.assigned_to)return;
+    if(!map[o.assigned_to])map[o.assigned_to]={activeCount:0,riskPoints:0,preventive:0,attention:0,urgent:0};
+    const s=map[o.assigned_to];s.activeCount++;
+    const h=orderElapsed(o)/3600000,p=operationalPriority(o);
+    if(p>=4){s.urgent++;s.riskPoints+=4}
+    else if(p===3){s.attention++;s.riskPoints+=2}
+    else if((o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2)){s.preventive++;s.riskPoints++}
+  });
+  return map;
+}
+function separatorCapacityLabel(x){
+  return x.riskPoints>=4?'EVITAR':x.riskPoints>=2?'MONITORAR':x.riskPoints===0?'DISPONÍVEL':'PREVENTIVO';
+}
 async function loadSeparators(){
   const [{data:people,error:pe},{data:active,error:ae}]=await Promise.all([
     db.from('profiles').select('id,nome,role,ativo').eq('role','separador').eq('ativo',true).order('nome'),
     db.from('orders').select('id,assigned_to,status').in('status',['aguardando','em_separacao'])
   ]);
   if(pe){$('assignee').innerHTML='<option value="">Erro ao carregar separadores</option>';return}
-  const load={};(active||[]).forEach(o=>{if(o.assigned_to)load[o.assigned_to]=(load[o.assigned_to]||0)+1});
-  const arr=(people||[]).map(x=>({...x,activeCount:load[x.id]||0})).sort((a,b)=>a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
-  const min=arr.length?arr[0].activeCount:0;
-  $('assignee').innerHTML=arr.map((x,n)=>`<option value="${x.id}">${esc(x.nome)} — ${x.activeCount} ativo${x.activeCount===1?'':'s'}${x.activeCount===min?' • RECOMENDADO':''}</option>`).join('')||'<option value="">Nenhum separador cadastrado</option>';
-  if(arr.length)$('assignee').value=arr[0].id;
+  const cap=separatorCapacityMap(active);
+  const arr=(people||[]).map(x=>({...x,...(cap[x.id]||{activeCount:0,riskPoints:0,preventive:0,attention:0,urgent:0})})).sort((a,b)=>a.riskPoints-b.riskPoints||a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
+  const best=arr[0];
+  $('assignee').innerHTML=arr.map(x=>`<option value="${x.id}">${esc(x.nome)} — ${x.activeCount} ativo${x.activeCount===1?'':'s'} • ${separatorCapacityLabel(x)}${best&&x.id===best.id?' • RECOMENDADO':''}</option>`).join('')||'<option value="">Nenhum separador cadastrado</option>';
+  if(best)$('assignee').value=best.id;
   const rec=$('assigneeRecommendation');
-  if(rec)rec.innerHTML=arr.length?`<b>Sugestão automática:</b> ${esc(arr[0].nome)} está com a menor carga atual (${arr[0].activeCount} pedido${arr[0].activeCount===1?'':'s'} ativo${arr[0].activeCount===1?'':'s'}). <span>A decisão continua sendo do administrador.</span>`:'';
+  if(rec)rec.innerHTML=best?`<b>Sugestão automática:</b> ${esc(best.nome)} combina a menor exposição a risco (${best.riskPoints} ponto${best.riskPoints===1?'':'s'}) com ${best.activeCount} pedido${best.activeCount===1?'':'s'} ativo${best.activeCount===1?'':'s'}. <span>A decisão continua sendo do administrador.</span>`:'';
 }
 async function createManagedUser(){const nome=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;if(!nome||!email||password.length<8){$('newUserMsg').textContent='Preencha nome, e-mail e uma senha inicial com pelo menos 8 caracteres.';return}$('createUserBtn').disabled=true;$('newUserMsg').textContent='Criando usuário...';try{const {data:{session:current}}=await db.auth.getSession();if(!current)throw new Error('Sessão expirada. Entre novamente.');const r=await fetch('/.netlify/functions/manage-user',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+current.access_token},body:JSON.stringify({action:'create',nome,email,password,role})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha ao criar usuário.');$('newUserMsg').textContent='Usuário criado com sucesso.';$('newUserName').value='';$('newUserEmail').value='';$('newUserPassword').value='';$('newUserForm').classList.add('hide');await loadUsers()}catch(e){$('newUserMsg').textContent=e.message}finally{$('createUserBtn').disabled=false}}
 async function toggleUser(id,isActive){const action=isActive?'desativar':'ativar';if(!confirm(`${action[0].toUpperCase()+action.slice(1)} este usuário?`))return;const {error}=await db.from('profiles').update({ativo:!isActive}).eq('id',id);if(error)return alert(error.message);await loadUsers()}
@@ -2004,17 +2171,18 @@ async function quickAssign(orderId){
     db.from('orders').select('id,assigned_to,status').in('status',['aguardando','em_separacao'])
   ]);
   if(pe)return alert('Não foi possível carregar os separadores: '+pe.message);
-  const load={};(active||[]).forEach(o=>{if(o.assigned_to&&String(o.id)!==String(orderId))load[o.assigned_to]=(load[o.assigned_to]||0)+1});
-  const arr=(people||[]).map(x=>({...x,activeCount:load[x.id]||0})).sort((a,b)=>a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
+  const relevant=(active||[]).filter(o=>String(o.id)!==String(orderId));
+  const cap=separatorCapacityMap(relevant);
+  const arr=(people||[]).map(x=>({...x,...(cap[x.id]||{activeCount:0,riskPoints:0,preventive:0,attention:0,urgent:0})})).sort((a,b)=>a.riskPoints-b.riskPoints||a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
   if(!arr.length)return alert('Nenhum separador ativo cadastrado.');
-  const min=arr[0].activeCount;
-  const names=arr.map((x,n)=>`${n+1} - ${x.nome} — ${x.activeCount} ativo${x.activeCount===1?'':'s'}${x.activeCount===min?' • RECOMENDADO':''}${x.id===order.assigned_to?' • ATUAL':''}`).join('\n');
+  const best=arr[0];
+  const names=arr.map((x,n)=>`${n+1} - ${x.nome} — ${x.activeCount} ativo${x.activeCount===1?'':'s'} • ${separatorCapacityLabel(x)} • risco ${x.riskPoints}${x.id===best.id?' • RECOMENDADO':''}${x.id===order.assigned_to?' • ATUAL':''}`).join('\n');
   const n=Number(prompt(`ALTERAR RESPONSÁVEL — Venda ${order.numero_venda}\n\n${names}\n\nDigite o número do novo separador:`));
   if(!n||n<1||n>arr.length)return;
   const chosen=arr[n-1];
   if(chosen.id===order.assigned_to)return alert(`${chosen.nome} já é o responsável por este pedido.`);
   const oldName=order.assigned?.nome||'Não atribuído';
-  if(!confirm(`CONFIRMAR ALTERAÇÃO\n\nVenda ${order.numero_venda}\nDe: ${oldName}\nPara: ${chosen.nome}\nCarga atual do novo responsável: ${chosen.activeCount} pedido${chosen.activeCount===1?'':'s'}\n\nO histórico da alteração será registrado.`))return;
+  if(!confirm(`CONFIRMAR ALTERAÇÃO\n\nVenda ${order.numero_venda}\nDe: ${oldName}\nPara: ${chosen.nome}\nCarga atual do novo responsável: ${chosen.activeCount} pedido${chosen.activeCount===1?'':'s'}\nRisco operacional atual: ${chosen.riskPoints} ponto${chosen.riskPoints===1?'':'s'} • ${separatorCapacityLabel(chosen)}\n\nO histórico da alteração será registrado.`))return;
   const {error}=await db.from('orders').update({assigned_to:chosen.id}).eq('id',orderId);
   if(error)return alert('Não foi possível alterar o responsável: '+error.message);
   await db.from('order_events').insert({order_id:orderId,user_id:session.user.id,tipo:'responsavel_alterado',descricao:`Responsável alterado pelo administrador ${profile.nome||session.user.email}: ${oldName} → ${chosen.nome}.`});
@@ -2032,7 +2200,7 @@ $('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result
 const reasonTitle=dbStatus==='aprovado'?'APROVADO':d.error_type==='modelo'?'MODELO / ESPECIFICAÇÃO INCORRETA':d.error_type==='quantidade'?'QUANTIDADE INCORRETA':d.error_type==='marca'?'MARCA INCORRETA':d.error_type==='produto'?'PRODUTO INCORRETO':'NÃO FOI POSSÍVEL CONFIRMAR';
 const markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');const evidence=Array.isArray(d.positive_evidence)&&d.positive_evidence.length?d.positive_evidence.join(' • '):'—';
 const contradictions=Array.isArray(d.contradictions)&&d.contradictions.length?d.contradictions.join(' • '):'Nenhuma';
-$('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br><b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* estação conclui somente após retorno a zero */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
+$('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br><b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}${renderRejectionCorrection(d,x,batchQty)}${renderRetryGuidance(d,x,batchQty)}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* estação conclui somente após retorno a zero */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
 if($('stationCompleteBack'))$('stationCompleteBack').onclick=()=>{station.startedAt=null;station.approvedLots=0;station.rejectedAttempts=0;show('dashboard');loadDashboard()};
 if($('cameraTest'))$('cameraTest').onclick=async()=>{try{$('cameraSetupInfo').textContent='Solicitando acesso à câmera...';await testSelectedCamera()}catch(e){$('cameraSetupBadge').textContent='ERRO';$('cameraSetupBadge').classList.remove('ok');$('cameraSetupInfo').textContent=e.message||e}};
 if($('cameraGuideToggle'))$('cameraGuideToggle').onclick=()=>{const g=$('stationFrameGuide');if(!g)return;const hidden=g.classList.toggle('hide');$('cameraGuideToggle').textContent=hidden?'MOSTRAR GUIA':'OCULTAR GUIA'};
