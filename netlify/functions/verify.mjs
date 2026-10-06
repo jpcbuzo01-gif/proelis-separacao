@@ -141,6 +141,9 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
 - ATENÇÃO A VARIANTES QUASE IDÊNTICAS: não trate “parecido com a foto” como suficiente quando pequenas dimensões físicas diferenciam modelos. Procure explicitamente diferenças de eixo, comprimento/altura do eixo, diâmetro, distância entre contatos, posição/altura de terminais, abas, furos, encaixes e proporções.
 - Para centrífugos e platinados, dê atenção especial ao TAMANHO/COMPRIMENTO DO EIXO e às proporções físicas. Exemplo operacional informado pela Proelis: variantes 56 e 48 podem ser visualmente muito semelhantes e o eixo da 56 é maior que o da 48. Não aprove uma delas sem evidência visual suficiente dessa diferença quando ela for necessária para distinguir a variante.
+- IMPORTANTE SOBRE O ÂNGULO: uma foto superior/frontal em que o eixo fica escondido pelo corpo NÃO contém a evidência necessária para diferenciar 48 de 56. Nessa situação, responda INCONCLUSIVO e explique que é necessário fotografar a peça de LADO ou em ângulo OBLÍQUO, com a base do eixo e a ponta do eixo simultaneamente visíveis.
+- Não diga apenas "mostre o eixo": diga explicitamente quando o ÂNGULO da foto impede comparar visualmente sua projeção.
+- Se houver mais de uma unidade no lote, elas podem ficar lado a lado, mas todas devem estar orientadas igualmente e com os eixos visíveis de perfil.
 - Use comparação RELATIVA com a foto oficial: proporção do eixo em relação ao corpo da peça, quanto o eixo projeta além do corpo e outros pontos geométricos repetíveis. Não invente medida em milímetros a partir de uma foto sem escala.
 - Se a geometria e os detalhes físicos DISCRIMINANTES coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
 - Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
@@ -157,6 +160,7 @@ EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
 - Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais DISCRIMINANTES coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
 - Centrífugo/platinado 56 x 48: se a variante depende do eixo maior/menor, compare a projeção e proporção do eixo com a referência. Se isso não estiver claramente visível => INCONCLUSIVO, nunca aprove só pelo formato geral.
+- Centrífugo/platinado fotografado de cima, com o eixo oculto dentro/atrás do corpo => INCONCLUSIVO com reason informando "ângulo não mostra o comprimento do eixo; fotografar de lado/oblíquo".
 - Peça sem marcação e foto oficial insuficiente para excluir uma variante visualmente semelhante => INCONCLUSIVO.
 
 REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
@@ -279,7 +283,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+discriminant_geometry_v10_32";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+camera_calibration_ready_v10_34";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
