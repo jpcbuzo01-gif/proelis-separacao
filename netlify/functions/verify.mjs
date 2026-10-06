@@ -422,7 +422,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+local_geometric_bore_detector_v10_39";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+radial_geometric_bore_detector_v10_39_1";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
