@@ -136,7 +136,12 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - Se aparecer uma característica incompatível com o esperado, responda REPROVADO.
 - MUITO IMPORTANTE: transcreva em visible_markings EXATAMENTE os códigos/modelos realmente legíveis na FOTO DO SEPARADOR. Não copie o modelo esperado para identified_model se ele não estiver legível na foto.
 - Se a foto mostrar explicitamente um código técnico diferente do esperado (ex.: 6200 quando esperado 6201), isso domina qualquer semelhança visual/foto oficial e deve ser REPROVADO.
-- A FOTO OFICIAL ajuda a localizar características e reconhecer o produto, mas diferença estética isolada não reprova.
+- A FOTO OFICIAL ajuda a localizar características e reconhecer o produto.
+- PRODUTOS SEM MARCAÇÃO VISÍVEL: algumas peças (ex.: centrífugos, tampas, ventoinhas e componentes moldados) podem não trazer marca, modelo ou código impressos. Nesses casos, NÃO exija texto inexistente e NÃO responda INCONCLUSIVO apenas porque marca/modelo não estão legíveis.
+- Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
+- Se a geometria e os detalhes físicos relevantes coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
+- Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
+- Marca/modelo ausentes na própria peça devem retornar identified_brand/identified_model como null; ausência não é erro de marca/modelo.
 - O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
 - Quantidade deve corresponder ao lote solicitado quando for possível contar com segurança.
 - Não adivinhe texto, código ou quantidade escondida/ilegível.
@@ -147,6 +152,8 @@ EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Esperado capacitor 30µF e foto mostra 25µF => REPROVADO/modelo.
 - Esperado peça de uma variante específica, mas o código/medida que diferencia as variantes não pode ser lido => INCONCLUSIVO.
 - Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
+- Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
+- Peça sem marcação e foto oficial insuficiente para excluir uma variante visualmente semelhante => INCONCLUSIVO.
 
 REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
 - Rolamentos HCH: "2RS" é equivalente a "DDU".
@@ -155,8 +162,9 @@ REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
 Antes de escolher APROVADO, faça internamente esta checagem:
 A) Quais atributos visíveis identificam este produto?
 B) Existe alguma contradição com o cadastro?
-C) A evidência visível confirma uma característica decisiva do cadastro ou existe alguma contradição?
-Se uma característica decisiva estiver claramente confirmada e não houver contradições, APROVADO é permitido.
+C) A evidência visível confirma uma característica decisiva do cadastro ou, para produto sem marcação, a geometria/detalhes estruturais coincidem claramente com a foto oficial?
+D) A marca/modelo realmente existe impresso na peça? Se não existir, não exija sua leitura.
+Se uma característica decisiva estiver claramente confirmada, OU a peça sem marcação tiver correspondência estrutural clara com a foto oficial, e não houver contradições, APROVADO é permitido.
 Se não houver evidência suficiente para diferenciar variantes, INCONCLUSIVO.
 Se houver característica incompatível, REPROVADO.
 
@@ -244,7 +252,8 @@ Responda APENAS JSON válido:
       }
     }
 
-    // APROVADO sem nenhuma evidência positiva declarada vira INCONCLUSIVO.
+    // V10.31: produto sem marcação pode ser confirmado pela geometria comparada à foto oficial.
+    // Continua proibido aprovar sem evidência positiva: a IA precisa declarar os detalhes físicos compatíveis.
     if(d.status==="APROVADO" && d.positive_evidence.length===0 && d.visible_markings.length===0){
       d.status="INCONCLUSIVO";
       d.error_type="inconclusivo";
@@ -266,7 +275,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2";
+    d.validation_policy="explicit_code_guard_v8_4_2+unmarked_reference_match_v10_31";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
