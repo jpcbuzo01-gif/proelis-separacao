@@ -90,6 +90,10 @@ export default async (req) => {
     if(!key) throw new Error("OPENAI_API_KEY não configurada.");
     const fd=await req.formData();
     const photo=fd.get("photo");
+    const focus1=fd.get("focus1");
+    const focus2=fd.get("focus2");
+    const detail1=fd.get("detail1");
+    const detail2=fd.get("detail2");
     let visualCalibration=null;
     let geometricBoreMeasurement=null;
     const geometricBoreRaw=fd.get("geometric_bore_measurement");
@@ -115,6 +119,8 @@ export default async (req) => {
     const referenceImage=await getReferenceImage(expected.ref);
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
+    const asDataUrl=async f=>f&&typeof f.arrayBuffer==="function"?`data:${f.type||"image/jpeg"};base64,${Buffer.from(await f.arrayBuffer()).toString("base64")}`:null;
+    const focusUrls=expectedBoreMm?{focus1:await asDataUrl(focus1),focus2:await asDataUrl(focus2),detail1:await asDataUrl(detail1),detail2:await asDataUrl(detail2)}:{};
     const prompt=`Você é o sistema de conferência visual de expedição da Proelis.
 Sua prioridade é EVITAR FALSO POSITIVO: nunca aprove um item apenas porque ele parece pertencer à mesma família do produto esperado.
 
@@ -139,10 +145,15 @@ Observações de separação: ${norm(catalog?.observacoes_separacao)}
 Calibração da câmera fixa: ${calibratedWidthMm?`ATIVA — largura total da imagem corresponde aproximadamente a ${calibratedWidthMm.toFixed(3)} mm no plano calibrado`:"não disponível"}
 Medida decisiva do FURO CENTRAL nesta família: ${expectedBoreMm?`${expectedBoreMm} mm (variante ${expectedBoreMm===18?"56":"48"})`:"não cadastrada/inferida"}
 
-REGRA ESPECIAL 48/56 — CLASSIFICAÇÃO VISUAL DO FURO CENTRAL:
-- Para esta família, NÃO faça medição em milímetros e NÃO dependa de régua, gabarito, calibração ou coordenadas.
+REGRA ESPECIAL 48/56 — VISÃO DUPLA (SOMENTE ESTA FAMÍLIA):
+- Esta regra especial NÃO se aplica a rolamentos nem aos demais produtos. Preserve a análise normal de marcações/códigos para eles.
+- Para 48/56, use a FOTO COMPLETA para confirmar PRIMEIRO que cada unidade pertence ao centrífugo/platinado correto: formato, molas, contatos, chapas, terminais, furos e construção geral.
+- Depois use os RECORTES INDIVIDUAIS e os DETALHES CENTRAIS fornecidos para classificar a variante.
+- NÃO faça medição em milímetros e NÃO dependa de régua, gabarito ou calibração.
 - A diferença operacional é VISUAL: variante 48 = FURO CENTRAL MENOR; variante 56 = FURO CENTRAL MAIOR.
-- Julgue CADA unidade separadamente pela proporção da abertura interna central em relação ao corpo circular/estrutura da própria peça.
+- Julgue CADA unidade separadamente pela proporção da abertura interna central em relação ao corpo/estrutura DA MESMA UNIDADE.
+- Não compare apenas uma peça com a outra. Duas peças iguais também precisam ser classificadas individualmente.
+- A classificação do furo NUNCA substitui a confirmação do produto completo. Se a geometria geral não confirmar o centrífugo esperado, REPROVADO/INCONCLUSIVO conforme a evidência.
 - Observe SOMENTE a abertura interna escura do furo central. Ignore o aro/ressalto externo, molas, chapas metálicas e o diâmetro externo da peça.
 - A câmera superior fixa é a vista correta. Não peça foto lateral, ângulo oblíquo ou medição do eixo.
 - Use a FOTO OFICIAL como referência visual quando disponível, principalmente a proporção furo/corpo.
@@ -202,7 +213,7 @@ B) Existe alguma contradição com o cadastro ou com a foto oficial?
 C) A evidência visível confirma uma característica decisiva do cadastro ou, para produto sem marcação, a geometria/detalhes estruturais coincidem claramente com a foto oficial?
 D) A marca/modelo realmente existe impresso na peça? Se não existir, não exija sua leitura.
 Se uma característica decisiva estiver claramente confirmada, OU a peça sem marcação tiver correspondência estrutural clara com a foto oficial, e não houver contradições, APROVADO é permitido.
-EXCEÇÃO CRÍTICA: nas variantes dimensionais 48/56 deste centrífugo/platinado, semelhança visual NUNCA basta para APROVAR. A aprovação final depende obrigatoriamente da medição calibrada do furo central feita pelo servidor.
+EXCEÇÃO CRÍTICA: nas variantes 48/56 deste centrífugo/platinado, semelhança geral NUNCA basta para APROVAR. A aprovação final exige DUAS evidências: (1) produto completo compatível e (2) classificação individual do furo MENOR/MAIOR com confiança ALTA usando os recortes da Visão Dupla.
 Se não houver evidência suficiente para diferenciar variantes, INCONCLUSIVO.
 Se houver característica incompatível, REPROVADO.
 
@@ -234,6 +245,10 @@ Responda APENAS JSON válido:
       input:[{role:"user",content:[
         {type:"input_text",text:prompt+"\n\nIMAGEM 1: FOTO DO SEPARADOR (imagem a ser julgada)."},
         {type:"input_image",image_url:`data:${mime};base64,${b64}`,detail:"high"},
+        ...(expectedBoreMm&&focusUrls.focus1?[{type:"input_text",text:"IMAGEM 1A: RECORTE DA PEÇA 1. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus1,detail:"high"}]:[]),
+        ...(expectedBoreMm&&focusUrls.detail1?[{type:"input_text",text:"IMAGEM 1B: ZOOM CENTRAL DA PEÇA 1. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail1,detail:"high"}]:[]),
+        ...(expectedBoreMm&&focusUrls.focus2?[{type:"input_text",text:"IMAGEM 1C: RECORTE DA PEÇA 2. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus2,detail:"high"}]:[]),
+        ...(expectedBoreMm&&focusUrls.detail2?[{type:"input_text",text:"IMAGEM 1D: ZOOM CENTRAL DA PEÇA 2. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail2,detail:"high"}]:[]),
         ...(referenceImage?[
           {type:"input_text",text:"IMAGEM 2: FOTO OFICIAL DE REFERÊNCIA DO CATÁLOGO. Use apenas como evidência complementar; não reprove por diferença estética isolada."},
           {type:"input_image",image_url:referenceImage,detail:"high"}
@@ -266,8 +281,9 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.bore_size_classifications)) d.bore_size_classifications=[];
     d.bore_size_classifications=d.bore_size_classifications.map((x,idx)=>({unit:Number(x?.unit)||idx+1,size_class:upper(x?.size_class),confidence:upper(x?.confidence),evidence:norm(x?.evidence)}));
 
-    // V10.41 — 48/56: classificação visual MAIOR/MENOR, sem medição em mm.
+    // V10.42 — Visão Dupla exclusiva 48/56: foto completa + recortes individuais + zoom central.
     d.visual_bore_classification_used=false;
+    d.dual_vision_4856_used=!!(expectedBoreMm&&(focusUrls.focus1||focusUrls.detail1));
     if(expectedBoreMm){
       const expectedVariant=expectedBoreMm===18?56:48;
       const expectedClass=expectedVariant===56?"MAIOR":"MENOR";
