@@ -286,7 +286,7 @@ Responda APENAS JSON válido:
         ? (Array.isArray(d.geometric_bore_mm)?d.geometric_bore_mm:[])
         : d.bore_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_left))&&Number.isFinite(Number(m.x_right)))
           .map(m=>Math.abs(Number(m.x_right)-Number(m.x_left))/1000*calibratedWidthMm))
-        .map(Number).filter(mm=>mm>5&&mm<40);
+        .map(Number).filter(mm=>expectedBoreMm?(mm>=12&&mm<=22):(mm>5&&mm<40));
       d.measured_bore_mm=usable.map(mm=>Number(mm.toFixed(2)));
       if(usable.length>=Math.max(1,expected.qty)){
         const expectedVariant=expectedBoreMm===18?56:48;
@@ -434,7 +434,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+radial_bore_diagnostic_lock_v10_39_2";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+first_inner_transition_bore_v10_39_3";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
