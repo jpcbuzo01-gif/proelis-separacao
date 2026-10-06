@@ -282,8 +282,8 @@ Responda APENAS JSON válido:
     d.visual_calibration_used=false;
     d.measured_bore_mm=[];
     if(calibratedWidthMm && expectedBoreMm){
-      const usable=(Array.isArray(d.geometric_bore_mm)&&d.geometric_bore_mm.length>=expected.qty
-        ? d.geometric_bore_mm
+      const usable=(expectedBoreMm
+        ? (Array.isArray(d.geometric_bore_mm)?d.geometric_bore_mm:[])
         : d.bore_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_left))&&Number.isFinite(Number(m.x_right)))
           .map(m=>Math.abs(Number(m.x_right)-Number(m.x_left))/1000*calibratedWidthMm))
         .map(Number).filter(mm=>mm>5&&mm<40);
@@ -323,6 +323,18 @@ Responda APENAS JSON válido:
         d.status="INCONCLUSIVO";d.error_type="inconclusivo";
         d.reason=`Calibração ativa e vista superior aceita, porém a análise não marcou as duas bordas internas do furo central em todas as ${expected.qty} unidades. Mantenha as peças planas como estão, com os furos centrais livres e sem objetos sobre eles; não é necessário mudar o ângulo da câmera.`;
         d.measurement_failure="bore_edges_not_returned";
+      }
+    }
+
+    // V10.39.2 — câmera superior fixa para 48/56; nunca devolver orientação lateral legada.
+    if(expectedBoreMm){
+      const legacy=/mude o [aâ]ngulo|[aâ]ngulo da foto|de lado|obl[ií]qu|mostrar o eixo|comprimento do eixo|proje[cç][aã]o do eixo/i.test(norm(d.reason));
+      if(legacy){
+        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+        d.measurement_failure=d.geometric_measurement_received?"geometric_dimension_review":"geometric_bore_required";
+        d.reason=d.geometric_measurement_received
+          ?`Vista superior correta. Medição geométrica: ${(d.geometric_bore_mm||[]).join(" / ")} mm. Não mude o ângulo.`
+          :"Vista superior correta. O detector geométrico não localizou todos os furos. Não mude o ângulo.";
       }
     }
 
@@ -422,7 +434,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+radial_geometric_bore_detector_v10_39_1";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+radial_bore_diagnostic_lock_v10_39_2";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
