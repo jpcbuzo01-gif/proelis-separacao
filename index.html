@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.13</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.18</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -433,6 +433,40 @@ body.station-operation #stationConfigDetails{display:none}
 .operation-summary [data-summary-filter]{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
 .operation-summary [data-summary-filter]:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(24,72,94,.10)}
 .operation-summary .preventive{background:#f1f9fd;border-color:#bddde9}.operation-summary .preventive b{color:#0878ad}
+
+/* V10.14 equilíbrio visual da equipe */
+.team-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.balance-badge{font-size:8px;font-weight:900;letter-spacing:.04em;border-radius:999px;padding:5px 7px;background:#e9f8ef;color:#187346;border:1px solid #bfe2cd;white-space:nowrap}
+.team-card.best-load{box-shadow:inset 0 0 0 1px rgba(27,130,80,.08)}
+.team-balance-hint{margin-top:10px;padding:9px 11px;border:1px solid #d4e7ee;border-radius:8px;background:#f7fbfd;color:#536c77;font-size:10px}
+.team-balance-hint b{color:#0878ad}.team-balance-hint strong{color:#187346}
+
+/* V10.15 modo prioridade */
+.operation-head-actions{display:flex;gap:7px;align-items:center}
+#focusQueueBtn.active{background:#fff3f1;border-color:#e7a9a1;color:#b42318;box-shadow:0 0 0 2px rgba(180,35,24,.06)}
+@media(max-width:620px){.operation-head-actions{width:100%;margin-top:8px}.operation-head-actions button{flex:1}}
+
+/* V10.16 recomendação de ação por pedido */
+.order-action-reason{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 2px;padding:8px 10px;border-radius:8px;border:1px solid #d5e5eb;background:#f6fbfd}
+.order-action-reason b{display:block;font-size:9px;letter-spacing:.05em;color:#0878ad}
+.order-action-reason span{display:block;margin-top:2px;font-size:10px;color:#607781}
+.order-action-reason.warn{background:#fff9e9;border-color:#ead89c}.order-action-reason.warn b{color:#856000}
+.order-action-reason.danger{background:#fff3f1;border-color:#efc1bb}.order-action-reason.danger b{color:#b42318}
+.order-action-reason.preventive{background:#f1f9fd;border-color:#bddde9}
+.order-action-reason button{margin:0;padding:6px 9px;font-size:9px;white-space:nowrap}
+@media(max-width:620px){.order-action-reason{align-items:flex-start;flex-direction:column}.order-action-reason button{width:100%}}
+
+/* V10.17 risco operacional por separador */
+.team-risk-strip{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.team-risk-strip .risk{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;padding:4px 6px;border-radius:999px;border:1px solid #d6e6ec;background:#f6fafc;color:#607781}
+.team-risk-strip .risk.ok{background:#edf8f1;border-color:#c8e5d2;color:#187346}
+.team-risk-strip .risk.preventive{background:#f1f9fd;border-color:#bddde9;color:#0878ad}
+.team-risk-strip .risk.attention{background:#fff9e9;border-color:#ead89c;color:#856000}
+.team-risk-strip .risk.urgent{background:#fff3f1;border-color:#efc1bb;color:#b42318}
+
+/* V10.18 alertas da equipe acionáveis */
+.team-risk-strip button.risk{font-family:inherit;cursor:pointer;margin:0;line-height:1.2}
+.team-risk-strip button.risk:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(24,72,94,.10)}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -440,7 +474,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.13</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.18</span></div>
   </div>
 </header><div class="w">
 
@@ -459,7 +493,7 @@ body.station-operation #stationConfigDetails{display:none}
     <div id="teamOverviewGrid" class="team-grid"></div><div id="operationalAlerts" class="operational-alerts hide"><div class="section-kicker">ATENÇÃO OPERACIONAL</div><div id="operationalAlertsList"></div></div>
   </div>
   <div class="c">
-    <div class="top"><div><div class="section-kicker">OPERAÇÃO</div><h2 id="ordersTitle">Pedidos</h2></div><button id="refresh" class="secondary">ATUALIZAR</button></div>
+    <div class="top"><div><div class="section-kicker">OPERAÇÃO</div><h2 id="ordersTitle">Pedidos</h2></div><div class="operation-head-actions"><button id="focusQueueBtn" class="secondary">MODO PRIORIDADE</button><button id="refresh" class="secondary">ATUALIZAR</button></div></div>
     <div class="order-tools">
       <label class="search-wrap"><span>⌕</span><input id="orderSearch" type="search" placeholder="Pesquisar venda, cliente ou separador"></label>
       <select id="separatorFilter" aria-label="Filtrar por separador"><option value="">Todos os separadores</option></select>
@@ -702,7 +736,8 @@ function infer(desc){const u=(desc||'').toUpperCase();const brand=u.includes('HC
 async function boot(){const {data:{session:s}}=await db.auth.getSession();session=s;if(!s){$('loading').classList.add('hide');$('login').classList.remove('hide');return}await enterApp()}
 async function enterApp(){const {data:p,error}=await db.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Perfil não encontrado.</div>';return}profile=p;if(profile.ativo===false){await db.auth.signOut();$('loading').classList.add('hide');$('login').classList.remove('hide');$('loginMsg').innerHTML='<div class="err">Seu usuário está desativado. Procure um administrador.</div>';return}$('loading').classList.add('hide');$('login').classList.add('hide');$('app').classList.remove('hide');$('hello').textContent=profile.nome;$('roleLabel').textContent=profile.role==='admin'?'Administrador':'Separador';$('adminNav').classList.toggle('hide',profile.role!=='admin');$('ordersTitle').textContent=profile.role==='admin'?'Todos os pedidos':'Meus pedidos';show('dashboard');await loadDashboard()}
 $('loginBtn').onclick=async()=>{$('loginBtn').disabled=true;$('loginMsg').innerHTML='';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginBtn').disabled=false;if(error){$('loginMsg').innerHTML=`<div class="err">${esc(error.message)}</div>`;return}session=data.session;await enterApp()};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('refresh').onclick=loadDashboard;$('orderSearch').addEventListener('input',renderDashboardOrders);$('separatorFilter').addEventListener('change',renderDashboardOrders);$('statusFilter').addEventListener('change',()=>{renderDashboardOrders();syncDashboardStatFilters()});$('orderSort').addEventListener('change',renderDashboardOrders);$('clearOrderFilters').onclick=()=>{$('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='recent';renderDashboardOrders();syncDashboardStatFilters()};document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='catalog')await loadCatalog();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
+$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};$('focusQueueBtn').onclick=()=>setPriorityMode(!priorityMode);
+$('refresh').onclick=loadDashboard;$('orderSearch').addEventListener('input',renderDashboardOrders);$('separatorFilter').addEventListener('change',renderDashboardOrders);$('statusFilter').addEventListener('change',()=>{renderDashboardOrders();syncDashboardStatFilters()});$('orderSort').addEventListener('change',renderDashboardOrders);$('clearOrderFilters').onclick=()=>{$('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='recent';renderDashboardOrders();syncDashboardStatFilters()};document.querySelectorAll('.nav button').forEach(b=>b.onclick=async()=>{show(b.dataset.view);if(b.dataset.view==='newOrder')await loadSeparators();if(b.dataset.view==='users')await loadUsers();if(b.dataset.view==='catalog')await loadCatalog();if(b.dataset.view==='metrics')await loadMetrics()});$('backDash').onclick=()=>{show('dashboard');loadDashboard()};if($('backHistory'))$('backHistory').onclick=()=>{show('dashboard');loadDashboard()};
 let dashboardOrders=[];
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
@@ -742,6 +777,15 @@ function operationalPriority(o){
   if(o.status==='aguardando')return h>=6?4:h>=2?3:1;
   return 0;
 }
+function orderActionReason(o){
+  if(!o.assigned_to&&(o.status==='aguardando'||o.status==='em_separacao'))return {level:'danger',text:'SEM RESPONSÁVEL',detail:'Atribua um separador para este pedido.'};
+  const h=orderElapsed(o)/3600000,p=operationalPriority(o);
+  if(p>=4)return {level:'danger',text:'AÇÃO IMEDIATA',detail:o.status==='em_separacao'?'Separação acima de 3 horas.':'Pedido aguardando início há 6 horas ou mais.'};
+  if(p===3)return {level:'warn',text:'PRECISA DE ATENÇÃO',detail:o.status==='em_separacao'?'Separação acima de 1 hora.':'Pedido aguardando início há 2 horas ou mais.'};
+  const preventive=(o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2);
+  if(preventive)return {level:'preventive',text:'PREVENIR ATRASO',detail:o.status==='em_separacao'?'Está próximo de completar 1 hora em separação.':'Está próximo de completar 2 horas aguardando início.'};
+  return null;
+}
 function renderDashboardOrders(){
   const search=($('orderSearch')?.value||'').trim().toLowerCase();
   const sep=$('separatorFilter')?.value||'';
@@ -749,7 +793,10 @@ function renderDashboardOrders(){
   const sort=$('orderSort')?.value||'recent';
   const rows=dashboardOrders.filter(o=>{
     const hay=[o.numero_venda,o.cliente,o.assigned?.nome,o.data_pedido,statusLabel(o.status)].filter(Boolean).join(' ').toLowerCase();
-    return (!search||hay.includes(search))&&(!sep||String(o.assigned_to||'')===sep)&&(!status||o.status===status);
+    const h=orderElapsed(o)/3600000;
+    const preventive=(o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2);
+    const actionable=(o.status==='aguardando'||o.status==='em_separacao')&&(preventive||operationalPriority(o)>=3||!o.assigned_to);
+    return (!priorityMode||actionable)&&(!search||hay.includes(search))&&(!sep||String(o.assigned_to||'')===sep)&&(!status||o.status===status);
   }).sort((a,b)=>{
     if(sort==='oldest')return new Date(a.created_at)-new Date(b.created_at);
     if(sort==='attention')return operationalPriority(b)-operationalPriority(a)||orderElapsed(b)-orderElapsed(a);
@@ -785,9 +832,10 @@ function renderDashboardOrders(){
     });
     summary.classList.toggle('hide',rows.length===0);
   }
-  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}" title="Alterar responsável com registro no histórico">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
+  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div>${orderActionReason(o)?`<div class="order-action-reason ${orderActionReason(o).level}"><div><b>${orderActionReason(o).text}</b><span>${orderActionReason(o).detail}</span></div>${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-action-transfer="${o.id}">TRANSFERIR</button>`:''}</div>`:''}<div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}" title="Alterar responsável com registro no histórico">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));
   document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));
+  document.querySelectorAll('[data-action-transfer]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.actionTransfer));
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>cancelOrder(b.dataset.cancel));
   document.querySelectorAll('[data-reopen]').forEach(b=>b.onclick=()=>reopenOrder(b.dataset.reopen));
   document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>openHistory(b.dataset.history));
@@ -806,14 +854,44 @@ function renderTeamOverview(){
   dashboardOrders.forEach(o=>{
     if(!o.assigned_to)return;
     const name=o.assigned?.nome||'Sem nome';
-    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,waiting:0,doneToday:0,activeOrders:[]});
+    if(!people.has(o.assigned_to))people.set(o.assigned_to,{id:o.assigned_to,name,separating:0,waiting:0,doneToday:0,preventive:0,attention:0,urgent:0,activeOrders:[]});
     const p=people.get(o.assigned_to);
     if(o.status==='em_separacao'){p.separating++;p.activeOrders.push(o)}
     if(o.status==='aguardando')p.waiting++;
+    if(o.status==='aguardando'||o.status==='em_separacao'){
+      const h=orderElapsed(o)/3600000,pri=operationalPriority(o);
+      if(pri>=4)p.urgent++;
+      else if(pri===3)p.attention++;
+      else if((o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2))p.preventive++;
+    }
     if(o.status==='concluido'&&orderCompletionDate(o)===today)p.doneToday++;
   });
   const arr=[...people.values()].sort((a,b)=>(b.separating+b.waiting)-(a.separating+a.waiting)||b.doneToday-a.doneToday||a.name.localeCompare(b.name));
-  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>{const load=p.separating+p.waiting,loadClass=load===0?'free':load<=2?'normal':load<=4?'busy':'overload',loadText=load===0?'LIVRE':load<=2?'NORMAL':load<=4?'OCUPADO':'SOBRECARGA';return `<div class="team-card ${load===0?'no-work':''}"><div class="team-card-head"><div class="team-name">${esc(p.name)}</div><span class="workload-badge ${loadClass}">${loadText}</span></div><div class="team-numbers team-numbers-3"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric waiting"><small>Aguardando</small><b>${p.waiting}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div><div class="team-workload"><span>Carga atual</span><b>${load} pedido${load===1?'':'s'}</b></div>${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`}).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
+  const loads=arr.map(p=>p.separating+p.waiting),minLoad=loads.length?Math.min(...loads):0,maxLoad=loads.length?Math.max(...loads):0;
+  $('teamOverviewGrid').innerHTML=arr.length?arr.map(p=>{const load=p.separating+p.waiting,loadClass=load===0?'free':load<=2?'normal':load<=4?'busy':'overload',loadText=load===0?'LIVRE':load<=2?'NORMAL':load<=4?'OCUPADO':'SOBRECARGA';return `<div class="team-card ${load===0?'no-work':''} ${load===minLoad?'best-load':''}"><div class="team-card-head"><div class="team-name">${esc(p.name)}</div><div class="team-badges">${load===minLoad&&arr.length>1?'<span class="balance-badge">PRÓXIMO PEDIDO</span>':''}<span class="workload-badge ${loadClass}">${loadText}</span></div></div><div class="team-numbers team-numbers-3"><div class="team-metric"><small>Separando agora</small><b>${p.separating}</b></div><div class="team-metric waiting"><small>Aguardando</small><b>${p.waiting}</b></div><div class="team-metric done"><small>Concluídos hoje</small><b>${p.doneToday}</b></div></div><div class="team-workload"><span>Carga atual</span><b>${load} pedido${load===1?'':'s'}</b></div>${p.preventive||p.attention||p.urgent?`<div class="team-risk-strip">${p.preventive?`<button class="risk preventive" data-team-risk="preventive" data-team-separator="${p.id}">${p.preventive} preventivo${p.preventive===1?'':'s'}</button>`:''}${p.attention?`<button class="risk attention" data-team-risk="attention" data-team-separator="${p.id}">${p.attention} atenção</button>`:''}${p.urgent?`<button class="risk urgent" data-team-risk="urgent" data-team-separator="${p.id}">${p.urgent} urgente${p.urgent===1?'':'s'}</button>`:''}</div>`:'<div class="team-risk-strip"><span class="risk ok">SEM ALERTAS</span></div>'}${p.activeOrders.length?`<div class="team-live-orders"><small>⏱ PEDIDOS EM ANDAMENTO</small>${p.activeOrders.map(o=>`<div class="team-live-order"><span>Venda ${esc(o.numero_venda)}</span><b data-order-timer="${o.id}">${formatOrderDuration(orderElapsed(o))}</b></div>`).join('')}</div>`:''}</div>`}).join(''):'<div class="muted">Nenhum separador com pedidos atribuídos.</div>';
+  $('teamOverviewGrid').querySelectorAll('[data-team-risk]').forEach(btn=>btn.onclick=()=>{
+    const sepId=btn.dataset.teamSeparator,risk=btn.dataset.teamRisk;
+    priorityMode=false;
+    const focusBtn=$('focusQueueBtn');if(focusBtn){focusBtn.classList.remove('active');focusBtn.textContent='MODO PRIORIDADE'}
+    $('orderSearch').value='';$('separatorFilter').value=sepId;$('statusFilter').value='';$('orderSort').value='attention';
+    const all=[...dashboardOrders];
+    dashboardOrders=all.filter(o=>{
+      if(String(o.assigned_to||'')!==String(sepId))return false;
+      const p=operationalPriority(o),h=orderElapsed(o)/3600000;
+      if(risk==='urgent')return p>=4;
+      if(risk==='attention')return p===3;
+      return (o.status==='em_separacao'&&h>=.75&&h<1)||(o.status==='aguardando'&&h>=1.5&&h<2);
+    });
+    renderDashboardOrders();dashboardOrders=all;
+    $('ordersList')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  const oldBalance=$('teamBalanceHint');if(oldBalance)oldBalance.remove();
+  if(arr.length>1){
+    const best=arr.filter(p=>p.separating+p.waiting===minLoad).map(p=>p.name);
+    const hint=document.createElement('div');hint.id='teamBalanceHint';hint.className='team-balance-hint';
+    hint.innerHTML=maxLoad-minLoad>=2?`<b>⚖ EQUILÍBRIO DA EQUIPE:</b> diferença atual de ${maxLoad-minLoad} pedidos. Próximo pedido recomendado para <strong>${best.map(esc).join(' / ')}</strong>.`:`<b>✓ CARGA EQUILIBRADA:</b> diferença máxima de ${maxLoad-minLoad} pedido${maxLoad-minLoad===1?'':'s'} entre os separadores.`;
+    $('teamOverviewGrid').after(hint);
+  }
 }
 
 function renderOperationalAlerts(){
@@ -841,6 +919,19 @@ function renderOperationalAlerts(){
     $('ordersList')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
   target.querySelectorAll('[data-alert-order]').forEach(btn=>btn.onclick=()=>quickAssign(btn.dataset.alertOrder));
+}
+let priorityMode=false;
+function setPriorityMode(enabled){
+  priorityMode=!!enabled;
+  const btn=$('focusQueueBtn');if(!btn)return;
+  btn.classList.toggle('active',priorityMode);
+  btn.textContent=priorityMode?'SAIR DO MODO PRIORIDADE':'MODO PRIORIDADE';
+  if(priorityMode){
+    $('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='attention';
+  }else{
+    $('orderSearch').value='';$('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='recent';
+  }
+  renderDashboardOrders();syncDashboardStatFilters();
 }
 async function loadDashboard(){
   let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});
