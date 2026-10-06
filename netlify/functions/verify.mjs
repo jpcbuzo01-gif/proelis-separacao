@@ -440,7 +440,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+jig_roi_measurement_v10_40";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+quadrant_jig_measurement_v10_40_2";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
