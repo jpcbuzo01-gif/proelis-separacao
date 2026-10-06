@@ -90,6 +90,9 @@ export default async (req) => {
     if(!key) throw new Error("OPENAI_API_KEY não configurada.");
     const fd=await req.formData();
     const photo=fd.get("photo");
+    let visualCalibration=null;
+    try{visualCalibration=JSON.parse(norm(fd.get("visual_calibration"))||"null")}catch{}
+    const calibratedWidthMm=(visualCalibration?.mmPerPixel>0&&visualCalibration?.videoWidth>0)?Number(visualCalibration.mmPerPixel)*Number(visualCalibration.videoWidth):null;
     const expected={
       ref:norm(fd.get("ref")), qty:Number(fd.get("qty")||0), description:norm(fd.get("description")),
       brand:norm(fd.get("brand")), model:norm(fd.get("model"))
@@ -101,6 +104,8 @@ export default async (req) => {
       expected.brand=norm(catalog.marca||catalog.fabricante||expected.brand);
       expected.model=norm(catalog.modelo||catalog.codigo_fabricante||expected.model);
     }
+    const variantText=`${expected.description} ${expected.model}`.toLowerCase();
+    const expectedShaftMm=/\b56\b/.test(variantText)?18:/\b48\b/.test(variantText)?16:null;
     const referenceImage=await getReferenceImage(expected.ref);
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
@@ -125,6 +130,17 @@ Código fabricante: ${norm(catalog?.codigo_fabricante)}
 Medidas: ${norm(catalog?.medidas)}
 Especificações: ${JSON.stringify(catalog?.especificacoes||{})}
 Observações de separação: ${norm(catalog?.observacoes_separacao)}
+Calibração da câmera fixa: ${calibratedWidthMm?`ATIVA — largura total da imagem corresponde aproximadamente a ${calibratedWidthMm.toFixed(3)} mm no plano calibrado`:"não disponível"}
+Medida decisiva do eixo nesta família: ${expectedShaftMm?`${expectedShaftMm} mm (variante ${expectedShaftMm===18?"56":"48"})`:"não cadastrada/inferida"}
+
+MEDIÇÃO VISUAL CALIBRADA:
+- Quando a calibração estiver ATIVA e a medida decisiva do eixo estiver informada, localize BASE e PONTA do eixo de CADA unidade na FOTO DO SEPARADOR.
+- A peça deve estar deitada de modo que o eixo fique aproximadamente HORIZONTAL e no mesmo plano calibrado da balança.
+- Para cada eixo claramente visível, devolva shaft_measurements com x_base e x_tip em coordenadas horizontais normalizadas de 0 a 1000, onde 0 é a borda esquerda da FOTO DO SEPARADOR e 1000 a borda direita.
+- NÃO estime milímetros por conta própria. Apenas localize os pontos x_base/x_tip; o servidor fará a conversão determinística usando a calibração.
+- Se base ou ponta estiver escondida, marque usable:false.
+- Duas unidades exigem duas medições utilizáveis para uma decisão dimensional automática.
+- A câmera pode estar vista de cima: isso é válido DESDE QUE a peça esteja deitada e o eixo inteiro esteja visível no plano horizontal da imagem.
 
 REGRA UNIVERSAL DE APROVAÇÃO:
 - APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
@@ -141,10 +157,10 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
 - ATENÇÃO A VARIANTES QUASE IDÊNTICAS: não trate “parecido com a foto” como suficiente quando pequenas dimensões físicas diferenciam modelos. Procure explicitamente diferenças de eixo, comprimento/altura do eixo, diâmetro, distância entre contatos, posição/altura de terminais, abas, furos, encaixes e proporções.
 - Para centrífugos e platinados, dê atenção especial ao TAMANHO/COMPRIMENTO DO EIXO e às proporções físicas. Exemplo operacional informado pela Proelis: variantes 56 e 48 podem ser visualmente muito semelhantes e o eixo da 56 é maior que o da 48. Não aprove uma delas sem evidência visual suficiente dessa diferença quando ela for necessária para distinguir a variante.
-- IMPORTANTE SOBRE O ÂNGULO: uma foto superior/frontal em que o eixo fica escondido pelo corpo NÃO contém a evidência necessária para diferenciar 48 de 56. Nessa situação, responda INCONCLUSIVO e explique que é necessário fotografar a peça de LADO ou em ângulo OBLÍQUO, com a base do eixo e a ponta do eixo simultaneamente visíveis.
-- Não diga apenas "mostre o eixo": diga explicitamente quando o ÂNGULO da foto impede comparar visualmente sua projeção.
-- Se houver mais de uma unidade no lote, elas podem ficar lado a lado, mas todas devem estar orientadas igualmente e com os eixos visíveis de perfil.
-- Use comparação RELATIVA com a foto oficial: proporção do eixo em relação ao corpo da peça, quanto o eixo projeta além do corpo e outros pontos geométricos repetíveis. Não invente medida em milímetros a partir de uma foto sem escala.
+- IMPORTANTE SOBRE O ÂNGULO: sem calibração, use apenas comparação relativa. COM calibração ativa, uma vista superior é válida se a peça estiver DEITADA, o eixo estiver aproximadamente HORIZONTAL no plano da balança e BASE + PONTA estiverem totalmente visíveis.
+- Se o eixo estiver apontando para a câmera, escondido pelo corpo, inclinado para fora do plano calibrado ou cortado, responda INCONCLUSIVO.
+- Se houver mais de uma unidade, mantenha todas deitadas, lado a lado, mesma orientação, eixos horizontais e sem sobreposição.
+- Nunca invente medida em milímetros: quando houver calibração, forneça somente as coordenadas normalizadas pedidas e deixe o servidor calcular.
 - Se a geometria e os detalhes físicos DISCRIMINANTES coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
 - Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
 - Marca/modelo ausentes na própria peça devem retornar identified_brand/identified_model como null; ausência não é erro de marca/modelo.
@@ -160,7 +176,7 @@ EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
 - Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais DISCRIMINANTES coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
 - Centrífugo/platinado 56 x 48: se a variante depende do eixo maior/menor, compare a projeção e proporção do eixo com a referência. Se isso não estiver claramente visível => INCONCLUSIVO, nunca aprove só pelo formato geral.
-- Centrífugo/platinado fotografado de cima, com o eixo oculto dentro/atrás do corpo => INCONCLUSIVO com reason informando "ângulo não mostra o comprimento do eixo; fotografar de lado/oblíquo".
+- Centrífugo/platinado com eixo oculto, cortado ou fora do plano calibrado => INCONCLUSIVO. Com câmera fixa calibrada, peça deitada + eixo horizontal totalmente visível é a posição preferida.
 - Peça sem marcação e foto oficial insuficiente para excluir uma variante visualmente semelhante => INCONCLUSIVO.
 
 REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
@@ -196,6 +212,7 @@ Responda APENAS JSON válido:
  "contradictions":string[],
  "variant_exclusion_evidence":string[],
  "decisive_attribute_seen":string|null,
+ "shaft_measurements":[{"unit":number,"x_base":number|null,"x_tip":number|null,"usable":boolean}],
  "reason":string
 }`;
     const body={
@@ -228,6 +245,50 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.positive_evidence)) d.positive_evidence=[];
     if(!Array.isArray(d.contradictions)) d.contradictions=[];
     if(!Array.isArray(d.variant_exclusion_evidence)) d.variant_exclusion_evidence=[];
+    if(!Array.isArray(d.shaft_measurements)) d.shaft_measurements=[];
+
+    // V10.35: medição dimensional determinística pela câmera fixa calibrada.
+    // A IA localiza apenas base/ponta em coordenadas 0..1000; o servidor converte para mm.
+    d.visual_calibration_used=false;
+    d.measured_shaft_mm=[];
+    if(calibratedWidthMm && expectedShaftMm){
+      const usable=d.shaft_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_base))&&Number.isFinite(Number(m.x_tip)))
+        .map(m=>Math.abs(Number(m.x_tip)-Number(m.x_base))/1000*calibratedWidthMm)
+        .filter(mm=>mm>5&&mm<40);
+      d.measured_shaft_mm=usable.map(mm=>Number(mm.toFixed(2)));
+      if(usable.length>=Math.max(1,expected.qty)){
+        const sorted=[...usable].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];
+        const spread=Math.max(...usable)-Math.min(...usable);
+        d.visual_calibration_used=true;
+        d.measured_shaft_median_mm=Number(median.toFixed(2));
+        d.measured_shaft_spread_mm=Number(spread.toFixed(2));
+        if(spread>1.2){
+          d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+          d.reason=`Medições dos eixos não ficaram consistentes entre as unidades (${d.measured_shaft_mm.join(" / ")} mm). Reposicione as peças deitadas e com os eixos horizontais.`;
+        }else{
+          // Zona de segurança entre 16 e 18 mm: <=16,6 classifica 48; >=17,4 classifica 56.
+          const measuredVariant=median<=16.6?48:median>=17.4?56:null;
+          d.measured_variant=measuredVariant;
+          const expectedVariant=expectedShaftMm===18?56:48;
+          if(measuredVariant===null){
+            d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+            d.reason=`Eixo medido em aproximadamente ${median.toFixed(1)} mm, dentro da zona de dúvida entre 48 (16 mm) e 56 (18 mm). Reposicione e tente novamente.`;
+          }else if(measuredVariant!==expectedVariant){
+            d.status="REPROVADO";d.error_type="modelo";
+            d.reason=`Medição calibrada indica aproximadamente ${median.toFixed(1)} mm (variante ${measuredVariant}), mas o pedido espera variante ${expectedVariant} (${expectedShaftMm} mm).`;
+            d.contradictions.push(`medição calibrada do eixo: ${median.toFixed(1)} mm`);
+          }else if(d.identified_quantity===expected.qty && !d.contradictions.length){
+            d.status="APROVADO";d.error_type="nenhum";
+            d.decisive_attribute_seen=`eixo medido por calibração: ${median.toFixed(1)} mm`;
+            d.positive_evidence.push(`medição calibrada compatível com variante ${expectedVariant}: ${median.toFixed(1)} mm`);
+            d.reason=`Medição calibrada do eixo compatível: aproximadamente ${median.toFixed(1)} mm; esperado ${expectedShaftMm} mm (variante ${expectedVariant}).`;
+          }
+        }
+      }else{
+        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+        d.reason=`Calibração ativa, mas não foi possível localizar base e ponta do eixo em todas as ${expected.qty} unidades. Deite as peças com os eixos na horizontal e totalmente visíveis.`;
+      }
+    }
 
     // V8.4: trava universal contra falso positivo.
     // Uma contradição explícita jamais pode terminar como APROVADO.
@@ -283,7 +344,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+camera_calibration_ready_v10_34";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_shaft_measurement_v10_35";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
