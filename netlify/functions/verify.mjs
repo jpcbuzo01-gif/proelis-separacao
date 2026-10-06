@@ -146,7 +146,7 @@ REGRA ABSOLUTA DE POSICIONAMENTO 48/56:
 MEDIÇÃO VISUAL CALIBRADA DO FURO CENTRAL:
 - Quando a calibração estiver ATIVA e a medida decisiva do eixo estiver informada, localize a BORDA ESQUERDA e a BORDA DIREITA do círculo interno do FURO CENTRAL de CADA unidade na FOTO DO SEPARADOR.
 - A peça deve estar deitada/plana, vista de cima, no mesmo plano calibrado da balança, com o furo central totalmente visível.
-- Para cada furo central claramente visível, devolva bore_measurements com x_base e x_tip em coordenadas horizontais normalizadas de 0 a 1000, onde 0 é a borda esquerda da FOTO DO SEPARADOR e 1000 a borda direita.
+- Para cada furo central claramente visível, devolva bore_measurements com x_left e x_right em coordenadas horizontais normalizadas de 0 a 1000, onde 0 é a borda esquerda da FOTO DO SEPARADOR e 1000 a borda direita.
 - NÃO estime milímetros por conta própria. Apenas localize os pontos x_base/x_tip; o servidor fará a conversão determinística usando a calibração.
 - Se o furo central estiver visível como na vista superior da estação, SEMPRE forneça x_left e x_right para cada unidade. Não devolva usable:false apenas por perspectiva/ângulo leve.
 - usable:false somente se uma das bordas internas estiver realmente oculta, cortada para fora da imagem ou impossível de localizar.
@@ -265,7 +265,7 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.bore_measurements)) d.bore_measurements=[];
 
     // V10.35: medição dimensional determinística pela câmera fixa calibrada.
-    // A IA localiza apenas base/ponta em coordenadas 0..1000; o servidor converte para mm.
+    // A IA localiza apenas as bordas internas esquerda/direita em coordenadas 0..1000; o servidor converte para mm.
     d.visual_calibration_used=false;
     d.measured_bore_mm=[];
     if(calibratedWidthMm && expectedBoreMm){
@@ -274,32 +274,35 @@ Responda APENAS JSON válido:
         .filter(mm=>mm>5&&mm<40);
       d.measured_bore_mm=usable.map(mm=>Number(mm.toFixed(2)));
       if(usable.length>=Math.max(1,expected.qty)){
-        const sorted=[...usable].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];
-        const spread=Math.max(...usable)-Math.min(...usable);
+        const expectedVariant=expectedBoreMm===18?56:48;
+        const classify=mm=>mm<=16.6?48:mm>=17.4?56:null;
+        const variants=usable.map(classify);
         d.visual_calibration_used=true;
-        d.measured_bore_median_mm=Number(median.toFixed(2));
-        d.measured_bore_spread_mm=Number(spread.toFixed(2));
-        if(spread>1.6){
+        d.measured_bore_median_mm=Number(([...usable].sort((a,b)=>a-b)[Math.floor(usable.length/2)]).toFixed(2));
+        d.measured_bore_spread_mm=Number((Math.max(...usable)-Math.min(...usable)).toFixed(2));
+        d.measured_variants=variants;
+        d.measured_variant=variants.every(x=>x===variants[0])?variants[0]:null;
+
+        // REGRA CRÍTICA: cada unidade é julgada separadamente.
+        // Um lote 56+48 jamais pode ser aprovado pela média/mediana.
+        if(variants.some(x=>x===null)){
           d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-          d.reason=`Medições dos furos centrais não ficaram consistentes entre as unidades (${d.measured_bore_mm.join(" / ")} mm). Reposicione as peças deitadas e com os furos centrais totalmente visíveis.`;
+          d.reason=`Medição individual entrou na zona de dúvida: ${d.measured_bore_mm.join(" / ")} mm. Nenhum lote misto ou duvidoso pode ser aprovado.`;
+          d.measurement_failure="individual_dimension_uncertain";
+        }else if(variants.some(x=>x!==expectedVariant)){
+          d.status="REPROVADO";d.error_type="modelo";
+          const wrong=usable.map((mm,idx)=>({mm,variant:variants[idx],unit:idx+1})).filter(x=>x.variant!==expectedVariant);
+          d.reason=`Lote contém variante incorreta. Pedido espera ${expectedVariant} (${expectedBoreMm} mm), mas ${wrong.map(x=>`unidade ${x.unit}: ${x.mm.toFixed(1)} mm = variante ${x.variant}`).join("; ")}.`;
+          d.contradictions.push(...wrong.map(x=>`unidade ${x.unit}: ${x.mm.toFixed(1)} mm / variante ${x.variant}`));
+          d.mixed_variant_detected=variants.some(x=>x!==variants[0]);
+        }else if(d.identified_quantity===expected.qty && !d.contradictions.length){
+          d.status="APROVADO";d.error_type="nenhum";
+          d.decisive_attribute_seen=`furos centrais medidos individualmente: ${d.measured_bore_mm.join(" / ")} mm`;
+          d.positive_evidence.push(`todas as ${expected.qty} unidades medidas como variante ${expectedVariant}`);
+          d.reason=`Todas as unidades foram medidas individualmente e correspondem à variante ${expectedVariant}: ${d.measured_bore_mm.join(" / ")} mm.`;
         }else{
-          // Zona de segurança entre 16 e 18 mm: <=16,6 classifica 48; >=17,4 classifica 56.
-          const measuredVariant=median<=16.6?48:median>=17.4?56:null;
-          d.measured_variant=measuredVariant;
-          const expectedVariant=expectedBoreMm===18?56:48;
-          if(measuredVariant===null){
-            d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-            d.reason=`Furo central medido em aproximadamente ${median.toFixed(1)} mm, dentro da zona de dúvida entre 48 (16 mm) e 56 (18 mm). Reposicione e tente novamente.`;
-          }else if(measuredVariant!==expectedVariant){
-            d.status="REPROVADO";d.error_type="modelo";
-            d.reason=`Medição calibrada indica aproximadamente ${median.toFixed(1)} mm (variante ${measuredVariant}), mas o pedido espera variante ${expectedVariant} (${expectedBoreMm} mm).`;
-            d.contradictions.push(`medição calibrada do furo central: ${median.toFixed(1)} mm`);
-          }else if(d.identified_quantity===expected.qty && !d.contradictions.length){
-            d.status="APROVADO";d.error_type="nenhum";
-            d.decisive_attribute_seen=`furo central medido por calibração: ${median.toFixed(1)} mm`;
-            d.positive_evidence.push(`medição calibrada compatível com variante ${expectedVariant}: ${median.toFixed(1)} mm`);
-            d.reason=`Medição calibrada do eixo compatível: aproximadamente ${median.toFixed(1)} mm; esperado ${expectedBoreMm} mm (variante ${expectedVariant}).`;
-          }
+          d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+          d.reason=`As medidas dimensionais são compatíveis, mas a quantidade visual não foi confirmada com segurança (${d.identified_quantity??"não identificada"} / esperado ${expected.qty}).`;
         }
       }else{
         d.status="INCONCLUSIVO";d.error_type="inconclusivo";
@@ -331,6 +334,15 @@ Responda APENAS JSON válido:
       d.error_type="inconclusivo";
       d.measurement_failure="calibrated_dimension_required";
       d.reason="A medição calibrada não classificou com segurança a variante 48/56. Não aprovar.";
+    }
+
+    // V10.38 — segunda trava independente contra lote misto.
+    if(expectedBoreMm && Array.isArray(d.measured_variants) && d.measured_variants.length){
+      const expectedVariant=expectedBoreMm===18?56:48;
+      if(d.measured_variants.some(x=>x!==null && x!==expectedVariant)){
+        d.status="REPROVADO";d.error_type="modelo";d.mixed_variant_detected=true;
+        d.reason=`TRAVA DIMENSIONAL: pelo menos uma unidade não corresponde à variante ${expectedVariant}. Medidas: ${(d.measured_bore_mm||[]).join(" / ")} mm.`;
+      }
     }
 
     // V8.4: trava universal contra falso positivo.
@@ -387,7 +399,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+calibrated_top_view_lock_v10_37_2";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+per_unit_bore_guard_v10_38";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
