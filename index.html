@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.39</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.39.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -605,7 +605,7 @@ body.station-operation #autoCycleSteps{position:sticky;top:4px;z-index:5;backgro
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.39</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.39.1</span></div>
   </div>
 </header><div class="w">
 
@@ -1930,47 +1930,46 @@ function stopStation(){
 }
 
 function detectDarkBoreCirclesFromCanvas(canvas, expectedCount=2){
-  // V10.39: detector geométrico local. Não usa IA para medir.
-  // Trabalha numa cópia reduzida e procura componentes escuros aproximadamente circulares.
-  const maxW=720,scale=Math.min(1,maxW/canvas.width),W=Math.max(1,Math.round(canvas.width*scale)),H=Math.max(1,Math.round(canvas.height*scale));
+  // V10.39.1: detector radial do furo escuro. Procura centros escuros e mede a transição radial.
+  const maxW=640,scale=Math.min(1,maxW/canvas.width),W=Math.max(1,Math.round(canvas.width*scale)),H=Math.max(1,Math.round(canvas.height*scale));
   const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;
   const ctx=tmp.getContext('2d',{willReadFrequently:true});ctx.drawImage(canvas,0,0,W,H);
-  const im=ctx.getImageData(0,0,W,H),p=im.data,N=W*H,gray=new Uint8Array(N);
-  let sum=0,sum2=0;
-  for(let k=0,j=0;k<N;k++,j+=4){const g=Math.round(.299*p[j]+.587*p[j+1]+.114*p[j+2]);gray[k]=g;sum+=g;sum2+=g*g}
-  const mean=sum/N,sd=Math.sqrt(Math.max(0,sum2/N-mean*mean));
-  const threshold=Math.max(25,Math.min(115,mean-Math.max(28,sd*.65)));
-  const mask=new Uint8Array(N);
-  // Ignore image borders; central bore is expected away from borders.
-  for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){const k=y*W+x;if(gray[k]<threshold)mask[k]=1}
-  const seen=new Uint8Array(N),components=[],stack=[];
-  for(let y=3;y<H-3;y++)for(let x=3;x<W-3;x++){
-    let k=y*W+x;if(!mask[k]||seen[k])continue;
-    let area=0,minX=x,maxX=x,minY=y,maxY=y,sx=0,sy=0;stack.push(k);seen[k]=1;
-    while(stack.length){
-      const q=stack.pop(),qy=Math.floor(q/W),qx=q-qy*W;area++;sx+=qx;sy+=qy;
-      if(qx<minX)minX=qx;if(qx>maxX)maxX=qx;if(qy<minY)minY=qy;if(qy>maxY)maxY=qy;
-      const ns=[q-1,q+1,q-W,q+W];
-      for(const n of ns){if(n>=0&&n<N&&mask[n]&&!seen[n]){seen[n]=1;stack.push(n)}}
+  const data=ctx.getImageData(0,0,W,H).data,gray=new Uint8Array(W*H);
+  for(let k=0,j=0;k<gray.length;k++,j+=4)gray[k]=Math.round(.299*data[j]+.587*data[j+1]+.114*data[j+2]);
+  // ROI central: exclui bordas da mesa/cabos.
+  const x0=Math.round(W*.12),x1=Math.round(W*.88),y0=Math.round(H*.16),y1=Math.round(H*.86);
+  const candidates=[];
+  const rMin=Math.max(5,Math.round(W*.008)),rMax=Math.max(rMin+3,Math.round(W*.055));
+  for(let cy=y0+rMax;cy<y1-rMax;cy+=4)for(let cx=x0+rMax;cx<x1-rMax;cx+=4){
+    const center=gray[cy*W+cx]; if(center>105)continue;
+    // Require a dark neighborhood, not a single dark pixel.
+    let dark=0,total=0;
+    for(let yy=-4;yy<=4;yy+=2)for(let xx=-4;xx<=4;xx+=2){total++;if(gray[(cy+yy)*W+cx+xx]<120)dark++}
+    if(dark/total<.62)continue;
+    let best=null;
+    for(let r=rMin;r<=rMax;r+=2){
+      let inner=0,outer=0,n=0;
+      for(let a=0;a<16;a++){
+        const t=a*Math.PI*2/16,cs=Math.cos(t),sn=Math.sin(t);
+        inner+=gray[Math.round(cy+sn*r*.72)*W+Math.round(cx+cs*r*.72)];
+        outer+=gray[Math.round(cy+sn*r*1.18)*W+Math.round(cx+cs*r*1.18)];n++;
+      }
+      inner/=n;outer/=n;
+      const contrast=outer-inner;
+      if(!best||contrast>best.contrast)best={r,contrast,inner,outer};
     }
-    const bw=maxX-minX+1,bh=maxY-minY+1;
-    if(area<90||bw<10||bh<10)continue;
-    const aspect=Math.min(bw,bh)/Math.max(bw,bh),fill=area/(bw*bh);
-    // Dark central holes are compact and close to circular; broad text/shadows are rejected.
-    if(aspect<.68||fill<.38||fill>.95)continue;
-    const d=(bw+bh)/2;
-    if(d>W*.16)continue;
-    components.push({x:(sx/area)/scale,y:(sy/area)/scale,diameterPx:d/scale,area,aspect,fill});
+    if(best&&best.contrast>22&&best.outer>best.inner){
+      candidates.push({x:cx/scale,y:cy/scale,diameterPx:(best.r*2)/scale,score:best.contrast,inner:best.inner,outer:best.outer});
+    }
   }
-  components.sort((a,b)=>b.area-a.area);
-  // Prevent multiple nested candidates around the same hole.
+  candidates.sort((a,b)=>b.score-a.score);
   const picked=[];
-  for(const c of components){
-    if(picked.some(q=>Math.hypot(q.x-c.x,q.y-c.y)<Math.max(q.diameterPx,c.diameterPx)*.8))continue;
+  for(const c of candidates){
+    if(picked.some(q=>Math.hypot(q.x-c.x,q.y-c.y)<Math.max(q.diameterPx,c.diameterPx)*1.15))continue;
     picked.push(c);if(picked.length>=Math.max(expectedCount,4))break;
   }
   picked.sort((a,b)=>a.x-b.x);
-  return {threshold,mean,sd,candidates:picked.slice(0,expectedCount)};
+  return {candidates:picked.slice(0,expectedCount)};
 }
 function geometricBoreMeasurement(canvas,expectedQty){
   const cal=window.visualCalibration||loadStationConfig().visualCalibration||null;
@@ -1982,9 +1981,9 @@ function geometricBoreMeasurement(canvas,expectedQty){
     unit:idx+1,pixelDiameter:Number(c.diameterPx.toFixed(2)),
     mm:Number((c.diameterPx*widthRatio*Number(cal.mmPerPixel)).toFixed(2)),
     x:Number(c.x.toFixed(1)),y:Number(c.y.toFixed(1)),
-    confidence:Number((Math.min(1,c.aspect)*Math.min(1,c.fill/.70)).toFixed(3))
+    confidence:Number(Math.min(1,Math.max(0,c.score/80)).toFixed(3))
   }));
-  return {ok:measurements.length>=expectedQty,measurements,detector:{threshold:Number(r.threshold.toFixed(1)),candidateCount:r.candidates.length}};
+  return {ok:measurements.length>=expectedQty,measurements,detector:{candidateCount:r.candidates.length,method:'radial-dark-bore-v2'}};
 }
 
 function captureStationPhoto(){
@@ -2023,7 +2022,7 @@ async function stationAnalyzeStableWeight(measured){
     window.__geometricBoreResult=dimensional4856?geometricBoreMeasurement($('stationCanvas'),batchQty):null;
     if(dimensional4856){
       const gm=window.__geometricBoreResult;
-      setStationState(gm?.ok?`🔵 MEDIÇÃO GEOMÉTRICA: ${gm.measurements.map(m=>m.mm.toFixed(1)+' mm').join(' / ')} — IA CONFERINDO...`:`🟠 MEDIÇÃO GEOMÉTRICA NÃO LOCALIZOU ${batchQty} FURO(S)`,'analyze');
+      setStationState(gm?.ok?`🔵 MEDIÇÃO GEOMÉTRICA: ${gm.measurements.map(m=>m.mm.toFixed(1)+' mm').join(' / ')} — IA CONFERINDO...`:`🟠 DETECTOR ENCONTROU ${gm?.measurements?.length||0} DE ${batchQty} FURO(S) — NÃO APROVAR`,'analyze');
     }
     const f=new File([blob],`estacao-${Date.now()}.jpg`,{type:'image/jpeg'});
     const dt=new DataTransfer();dt.items.add(f);$('photo').files=dt.files;
