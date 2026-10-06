@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.7</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.10</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -401,6 +401,23 @@ body.station-operation #stationConfigDetails{display:none}
 .team-workload{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding:7px 9px;border-radius:7px;background:#f7fafb;color:#617780;font-size:10px}
 .team-workload b{color:#26343d;font-size:11px}
 @media(max-width:620px){.team-numbers-3{grid-template-columns:1fr 1fr}.team-numbers-3 .done{grid-column:1/-1}}
+
+/* V10.9 resumo operacional da fila */
+.operation-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:8px 0 13px}
+.operation-summary>div{border:1px solid #dce8ed;border-radius:8px;background:#f8fbfc;padding:8px 10px}
+.operation-summary small{display:block;color:#6b7f88;font-size:8px;font-weight:900;letter-spacing:.04em}
+.operation-summary b{display:block;margin-top:2px;font-size:17px;color:#264653}
+.operation-summary .warn{background:#fff9e9;border-color:#ecd99c}.operation-summary .warn b{color:#856000}
+.operation-summary .danger{background:#fff3f1;border-color:#efc3bd}.operation-summary .danger b{color:#b42318}
+.operation-summary .summary-time{font-size:14px;font-variant-numeric:tabular-nums}
+@media(max-width:760px){.operation-summary{grid-template-columns:repeat(2,1fr)}.operation-summary>div:last-child{grid-column:1/-1}}
+
+/* V10.10 alertas acionáveis */
+.operational-alert-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.alert-open-order{margin:0;padding:6px 9px;border-radius:7px;font-size:9px;font-weight:900;min-width:auto;background:#fff;color:#075f86;border:1px solid #b9d9e7}
+.alert-open-order:hover{background:#eef8fc}
+.operational-alert.critical .alert-open-order{color:#a1261c;border-color:#e5b6b0;background:#fff}
+@media(max-width:620px){.operational-alert-actions{width:100%;justify-content:flex-start;margin-top:7px}}
 </style></head><body>
 <header class="proelis-header">
   <div class="proelis-header-inner">
@@ -408,7 +425,7 @@ body.station-operation #stationConfigDetails{display:none}
       <div class="proelis-mark" aria-hidden="true"><span>P</span></div>
       <div class="proelis-brand-text"><strong>PROELIS</strong><small>SEPARAÇÃO INTELIGENTE</small></div>
     </div>
-    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.7</span></div>
+    <div class="proelis-header-right"><span class="system-chip">SISTEMA INTERNO</span><span class="version-badge">V10.10</span></div>
   </div>
 </header><div class="w">
 
@@ -435,6 +452,7 @@ body.station-operation #stationConfigDetails{display:none}
       <button id="clearOrderFilters" class="secondary">LIMPAR</button>
     </div>
     <div id="orderFilterCount" class="small muted filter-count"></div>
+    <div id="operationSummary" class="operation-summary"></div>
     <div id="ordersList"></div>
   </div>
  </section>
@@ -724,7 +742,17 @@ function renderDashboardOrders(){
     return new Date(b.created_at)-new Date(a.created_at);
   });
   $('orderFilterCount').textContent=`Exibindo ${rows.length} de ${dashboardOrders.length} pedido${dashboardOrders.length===1?'':'s'}`;
-  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
+  const summary=$('operationSummary');
+  if(summary){
+    const active=rows.filter(o=>o.status==='aguardando'||o.status==='em_separacao');
+    const attention=active.filter(o=>operationalPriority(o)===3).length;
+    const urgent=active.filter(o=>operationalPriority(o)>=4).length;
+    const unassigned=active.filter(o=>!o.assigned_to).length;
+    const oldest=active.slice().sort((a,b)=>orderElapsed(b)-orderElapsed(a))[0];
+    summary.innerHTML=`<div><small>ATIVOS NO FILTRO</small><b>${active.length}</b></div><div class="${attention?'warn':''}"><small>ATENÇÃO</small><b>${attention}</b></div><div class="${urgent?'danger':''}"><small>URGENTES</small><b>${urgent}</b></div><div class="${unassigned?'danger':''}"><small>SEM RESPONSÁVEL</small><b>${unassigned}</b></div><div><small>MAIS ANTIGO ATIVO</small><b class="summary-time">${oldest?formatOrderDuration(orderElapsed(oldest)):'—'}</b></div>`;
+    summary.classList.toggle('hide',rows.length===0);
+  }
+  $('ordersList').innerHTML=rows.length?rows.map(o=>`<div class="order"><div class="top"><div><h3>Venda ${esc(o.numero_venda)}</h3><div class="order-client">${esc(o.cliente||'Cliente não informado')}</div><div class="order-meta">${profile.role==='admin'?'Separador: '+esc(o.assigned?.nome||'Não atribuído')+' • ':''}${esc(o.data_pedido||'')}</div><div class="order-timer ${o.status==='concluido'?'done':''}" data-order-timer="${o.id}">${o.status==='concluido'?'✓ Tempo total: ':'⏱ Desde o envio: '}${formatOrderDuration(orderElapsed(o))}</div></div><div class="order-status-stack"><span class="pill ${o.status==='aguardando'?'status-waiting':o.status==='em_separacao'?'status-progress':o.status==='concluido'?'status-done':'status-cancelled'}">${esc(statusLabel(o.status))}</span>${operationalPriority(o)>=3?`<span class="priority-badge ${operationalPriority(o)>=4?'urgent':''}">${operationalPriority(o)>=4?'URGENTE':'ATENÇÃO'}</span>`:''}</div></div><div class="rowactions">${o.status!=='concluido'&&o.assigned_to===session.user.id?`<button data-pick="${o.id}">${o.status==='aguardando'?'INICIAR SEPARAÇÃO':'CONTINUAR'}</button>`:''}${profile.role==='admin'&&o.status!=='concluido'&&o.status!=='cancelado'?`<button class="secondary" data-assign="${o.id}" title="Alterar responsável com registro no histórico">ALTERAR RESPONSÁVEL</button><button class="cancel-order-btn" data-cancel="${o.id}">CANCELAR PEDIDO</button>`:''}${profile.role==='admin'&&o.status==='concluido'?`<button class="secondary reopen-order-btn" data-reopen="${o.id}">REABRIR PEDIDO</button>`:''}${profile.role==='admin'?`<button class="secondary" data-history="${o.id}">DETALHES / HISTÓRICO</button>`:''}</div></div>`).join(''):'<p class="muted">Nenhum pedido encontrado com estes filtros.</p>';
   document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openOrder(b.dataset.pick));
   document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>quickAssign(b.dataset.assign));
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>cancelOrder(b.dataset.cancel));
@@ -762,12 +790,18 @@ function renderOperationalAlerts(){
   dashboardOrders.forEach(o=>{
     if(o.status==='cancelado'||o.status==='concluido')return;
     const elapsed=orderElapsed(o),hours=elapsed/3600000;
-    if(o.status==='em_separacao'&&hours>=1)alerts.push({level:hours>=3?'critical':'warn',title:`Venda ${o.numero_venda} em separação há ${formatOrderDuration(elapsed)}`,detail:`${o.assigned?.nome||'Sem responsável'} • ${o.cliente||'Cliente não informado'}`,elapsed});
-    else if(o.status==='aguardando'&&hours>=2)alerts.push({level:hours>=6?'critical':'warn',title:`Venda ${o.numero_venda} aguardando início`,detail:`${o.assigned?.nome||'Sem responsável'} • ${o.cliente||'Cliente não informado'}`,elapsed});
+    if(o.status==='em_separacao'&&hours>=1)alerts.push({id:o.id,sale:o.numero_venda,level:hours>=3?'critical':'warn',title:`Venda ${o.numero_venda} em separação há ${formatOrderDuration(elapsed)}`,detail:`${o.assigned?.nome||'Sem responsável'} • ${o.cliente||'Cliente não informado'}`,elapsed});
+    else if(o.status==='aguardando'&&hours>=2)alerts.push({id:o.id,sale:o.numero_venda,level:hours>=6?'critical':'warn',title:`Venda ${o.numero_venda} aguardando início`,detail:`${o.assigned?.nome||'Sem responsável'} • ${o.cliente||'Cliente não informado'}`,elapsed});
   });
   alerts.sort((a,b)=>b.elapsed-a.elapsed);
   box.classList.toggle('hide',!alerts.length);
-  target.innerHTML=alerts.slice(0,8).map(a=>`<div class="operational-alert ${a.level}"><div><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></div><span class="operational-alert-time">${a.level==='critical'?'URGENTE':'ATENÇÃO'}</span></div>`).join('');
+  target.innerHTML=alerts.slice(0,8).map(a=>`<div class="operational-alert ${a.level}"><div><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></div><div class="operational-alert-actions"><span class="operational-alert-time">${a.level==='critical'?'URGENTE':'ATENÇÃO'}</span><button class="alert-open-order" data-alert-sale="${esc(a.sale)}">VER PEDIDO</button></div></div>`).join('');
+  target.querySelectorAll('[data-alert-sale]').forEach(btn=>btn.onclick=()=>{
+    $('orderSearch').value=btn.dataset.alertSale||'';
+    $('separatorFilter').value='';$('statusFilter').value='';$('orderSort').value='attention';
+    renderDashboardOrders();syncDashboardStatFilters();
+    $('ordersList')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
 }
 async function loadDashboard(){
   let q=db.from('orders').select('*, assigned:profiles!orders_assigned_to_fkey(nome)').order('created_at',{ascending:false});
@@ -1745,7 +1779,31 @@ async function cancelOrder(orderId){
   await db.from('order_events').insert({order_id:orderId,user_id:session.user.id,tipo:'pedido_cancelado',descricao:`Pedido cancelado pelo administrador ${profile.nome||session.user.email}. Motivo: ${motivo}`});
   await loadDashboard();
 }
-async function quickAssign(orderId){await loadSeparators();const opts=[...$('assignee').options].map(o=>`${o.value}|${o.textContent}`).filter(x=>!x.startsWith('|'));if(!opts.length){alert('Cadastre primeiro um usuário Separador no Supabase Authentication.');return}const names=opts.map((x,n)=>`${n+1} - ${x.split('|')[1]}`).join('\n');const n=Number(prompt('Escolha o separador:\n'+names));if(!n||n<1||n>opts.length)return;const uid=opts[n-1].split('|')[0];const {error}=await db.from('orders').update({assigned_to:uid}).eq('id',orderId);if(error)alert(error.message);else loadDashboard()}
+async function quickAssign(orderId){
+  if(profile.role!=='admin')return;
+  const order=dashboardOrders.find(x=>String(x.id)===String(orderId));
+  if(!order)return alert('Pedido não encontrado.');
+  const [{data:people,error:pe},{data:active,error:ae}]=await Promise.all([
+    db.from('profiles').select('id,nome,role,ativo').eq('role','separador').eq('ativo',true).order('nome'),
+    db.from('orders').select('id,assigned_to,status').in('status',['aguardando','em_separacao'])
+  ]);
+  if(pe)return alert('Não foi possível carregar os separadores: '+pe.message);
+  const load={};(active||[]).forEach(o=>{if(o.assigned_to&&String(o.id)!==String(orderId))load[o.assigned_to]=(load[o.assigned_to]||0)+1});
+  const arr=(people||[]).map(x=>({...x,activeCount:load[x.id]||0})).sort((a,b)=>a.activeCount-b.activeCount||a.nome.localeCompare(b.nome));
+  if(!arr.length)return alert('Nenhum separador ativo cadastrado.');
+  const min=arr[0].activeCount;
+  const names=arr.map((x,n)=>`${n+1} - ${x.nome} — ${x.activeCount} ativo${x.activeCount===1?'':'s'}${x.activeCount===min?' • RECOMENDADO':''}${x.id===order.assigned_to?' • ATUAL':''}`).join('\n');
+  const n=Number(prompt(`ALTERAR RESPONSÁVEL — Venda ${order.numero_venda}\n\n${names}\n\nDigite o número do novo separador:`));
+  if(!n||n<1||n>arr.length)return;
+  const chosen=arr[n-1];
+  if(chosen.id===order.assigned_to)return alert(`${chosen.nome} já é o responsável por este pedido.`);
+  const oldName=order.assigned?.nome||'Não atribuído';
+  if(!confirm(`CONFIRMAR ALTERAÇÃO\n\nVenda ${order.numero_venda}\nDe: ${oldName}\nPara: ${chosen.nome}\nCarga atual do novo responsável: ${chosen.activeCount} pedido${chosen.activeCount===1?'':'s'}\n\nO histórico da alteração será registrado.`))return;
+  const {error}=await db.from('orders').update({assigned_to:chosen.id}).eq('id',orderId);
+  if(error)return alert('Não foi possível alterar o responsável: '+error.message);
+  await db.from('order_events').insert({order_id:orderId,user_id:session.user.id,tipo:'responsavel_alterado',descricao:`Responsável alterado pelo administrador ${profile.nome||session.user.email}: ${oldName} → ${chosen.nome}.`});
+  await loadDashboard();
+}
 $('orderPhoto').onchange=e=>{const f=e.target.files[0];if(f){$('orderPreview').src=URL.createObjectURL(f);$('orderPreview').classList.remove('hide')}};
 $('readOrder').onclick=async()=>{const file=$('orderPhoto').files[0];if(!file){$('orderResult').innerHTML='<div class="inc">Tire ou selecione a foto do pedido.</div>';return}$('readOrder').disabled=true;$('readOrder').textContent='LENDO PEDIDO...';$('orderResult').innerHTML='';try{const blob=await compress(file),fd=new FormData();fd.append('photo',blob,'pedido.jpg');const resp=await fetch('/.netlify/functions/read-order',{method:'POST',body:fd});const raw=await resp.text();let d;try{d=JSON.parse(raw)}catch{throw new Error(`Servidor retornou ${resp.status}: ${raw.slice(0,180)}`)}if(!resp.ok)throw new Error(d.error||`Erro HTTP ${resp.status}`);if(!Array.isArray(d.items)||!d.items.length)throw new Error('Nenhum item foi reconhecido.');orderData=d;$('sale').textContent=d.sale_number||'—';$('date').textContent=d.date||'—';$('client').textContent=d.client||'—';$('orderRows').innerHTML=d.items.map((x,n)=>`<tr><td><input class="q" type="number" min="1" value="${Number(x.qty)||1}" style="width:75px"></td><td><input class="r" value="${esc(x.ref||'')}" style="width:90px"></td><td><input class="d" value="${esc(x.description||'')}"></td><td><button class="secondary del" type="button" style="padding:8px;margin:0">×</button></td></tr>`).join('');document.querySelectorAll('.del').forEach(b=>b.onclick=()=>b.closest('tr').remove());$('orderImport').classList.add('hide');$('orderConfirm').classList.remove('hide');await loadSeparators()}catch(e){$('orderResult').innerHTML=`<div class="err"><h3>ERRO NA LEITURA</h3>${esc(e.message||e)}</div>`}finally{$('readOrder').disabled=false;$('readOrder').textContent='LER PEDIDO'}};
 $('backOrder').onclick=()=>{$('orderConfirm').classList.add('hide');$('orderImport').classList.remove('hide')};
