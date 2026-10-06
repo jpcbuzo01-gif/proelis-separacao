@@ -139,23 +139,21 @@ Observações de separação: ${norm(catalog?.observacoes_separacao)}
 Calibração da câmera fixa: ${calibratedWidthMm?`ATIVA — largura total da imagem corresponde aproximadamente a ${calibratedWidthMm.toFixed(3)} mm no plano calibrado`:"não disponível"}
 Medida decisiva do FURO CENTRAL nesta família: ${expectedBoreMm?`${expectedBoreMm} mm (variante ${expectedBoreMm===18?"56":"48"})`:"não cadastrada/inferida"}
 
-REGRA ABSOLUTA DE POSICIONAMENTO 48/56:
-- Com expectedBoreMm definido e calibração ativa, a VISTA SUPERIOR da câmera fixa é o ângulo CORRETO.
-- PROIBIDO pedir para virar a peça, mostrar de lado, usar ângulo oblíquo ou mostrar comprimento/projeção de eixo.
-- Se os furos centrais estão inteiros na foto, NÃO use ângulo como motivo de INCONCLUSIVO.
-- Ignore qualquer regra geral sobre eixo lateral que conflite com esta regra.
-- A tarefa dimensional é somente localizar as bordas INTERNAS esquerda/direita do furo central.
-
-MEDIÇÃO VISUAL CALIBRADA DO FURO CENTRAL:
-- Quando a calibração estiver ATIVA e a medida decisiva do eixo estiver informada, localize a BORDA ESQUERDA e a BORDA DIREITA do círculo interno do FURO CENTRAL de CADA unidade na FOTO DO SEPARADOR.
-- A peça deve estar deitada/plana, vista de cima, no mesmo plano calibrado da balança, com o furo central totalmente visível.
-- Para cada furo central claramente visível, devolva bore_measurements com x_left e x_right em coordenadas horizontais normalizadas de 0 a 1000, onde 0 é a borda esquerda da FOTO DO SEPARADOR e 1000 a borda direita.
-- NÃO estime milímetros por conta própria. Apenas localize os pontos x_base/x_tip; o servidor fará a conversão determinística usando a calibração.
-- Se o furo central estiver visível como na vista superior da estação, SEMPRE forneça x_left e x_right para cada unidade. Não devolva usable:false apenas por perspectiva/ângulo leve.
-- usable:false somente se uma das bordas internas estiver realmente oculta, cortada para fora da imagem ou impossível de localizar.
-- Duas unidades exigem duas medições. Meça o DIÂMETRO INTERNO do furo, não o diâmetro externo do ressalto/corpo.
-- A vista de cima da câmera fixa é a posição NORMAL e PREFERIDA. Não peça foto lateral/oblíqua para esta medição.
-- A tarefa aqui não é estimar milímetros: apenas marcar as bordas internas esquerda/direita. O servidor calcula os milímetros.
+REGRA ESPECIAL 48/56 — CLASSIFICAÇÃO VISUAL DO FURO CENTRAL:
+- Para esta família, NÃO faça medição em milímetros e NÃO dependa de régua, gabarito, calibração ou coordenadas.
+- A diferença operacional é VISUAL: variante 48 = FURO CENTRAL MENOR; variante 56 = FURO CENTRAL MAIOR.
+- Julgue CADA unidade separadamente pela proporção da abertura interna central em relação ao corpo circular/estrutura da própria peça.
+- Observe SOMENTE a abertura interna escura do furo central. Ignore o aro/ressalto externo, molas, chapas metálicas e o diâmetro externo da peça.
+- A câmera superior fixa é a vista correta. Não peça foto lateral, ângulo oblíquo ou medição do eixo.
+- Use a FOTO OFICIAL como referência visual quando disponível, principalmente a proporção furo/corpo.
+- Para cada unidade devolva bore_size_classifications com unit e size_class = "MENOR", "MAIOR" ou "INCONCLUSIVO".
+- confidence deve ser "ALTA", "MEDIA" ou "BAIXA". Só use ALTA quando a abertura interna estiver inteira, nítida e a diferença de proporção estiver clara.
+- Se duas unidades estiverem na foto, classifique as DUAS independentemente. Não use apenas "elas são iguais" como prova da variante.
+- Pedido variante 48: todas as unidades precisam ser MENOR com confiança ALTA para aprovação visual desta característica.
+- Pedido variante 56: todas as unidades precisam ser MAIOR com confiança ALTA para aprovação visual desta característica.
+- MAIOR+MENOR em qualquer ordem = lote misto e deve ser REPROVADO.
+- Se alguma unidade for INCONCLUSIVO ou confiança diferente de ALTA = INCONCLUSIVO, nunca aprove por palpite.
+- NÃO invente 16 mm/18 mm. A tarefa é apenas MAIOR versus MENOR.
 
 REGRA UNIVERSAL DE APROVAÇÃO:
 - APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
@@ -171,11 +169,11 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - PRODUTOS SEM MARCAÇÃO VISÍVEL: algumas peças (ex.: centrífugos, tampas, ventoinhas e componentes moldados) podem não trazer marca, modelo ou código impressos. Nesses casos, NÃO exija texto inexistente e NÃO responda INCONCLUSIVO apenas porque marca/modelo não estão legíveis.
 - Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
 - ATENÇÃO A VARIANTES QUASE IDÊNTICAS: não trate “parecido com a foto” como suficiente quando pequenas dimensões físicas diferenciam modelos. Procure explicitamente diferenças no furo central, diâmetro do furo central, diâmetro, distância entre contatos, posição/altura de terminais, abas, furos, encaixes e proporções.
-- Para centrífugos e platinados, dê atenção especial ao DIÂMETRO INTERNO DO FURO CENTRAL e às proporções físicas. Exemplo operacional informado pela Proelis: variantes 56 e 48 podem ser visualmente muito semelhantes e o furo para eixo da 56 é de 18 mm e o da 48 é de 16 mm. Não aprove uma delas sem evidência visual suficiente dessa diferença quando ela for necessária para distinguir a variante.
-- IMPORTANTE SOBRE O ÂNGULO: sem calibração, use apenas comparação relativa. COM calibração ativa, uma vista superior é válida se a peça estiver DEITADA, o eixo estiver aproximadamente HORIZONTAL no plano da balança e as duas bordas do furo central estiverem totalmente visíveis.
+- Para centrífugos/platinados 48/56, use a classificação visual especial acima: 48 = abertura central MENOR; 56 = abertura central MAIOR. Não estime milímetros.
+- IMPORTANTE SOBRE O ÂNGULO: para 48/56, a vista superior fixa é a vista normal. A abertura central deve estar inteira e visível.
 - Se o furo central estiver escondido, inclinado demais, desfocado ou cortado, responda INCONCLUSIVO.
 - Se houver mais de uma unidade, mantenha todas deitadas, lado a lado, mesma orientação, furos centrais totalmente visíveis e sem sobreposição.
-- Nunca invente medida em milímetros: quando houver calibração, forneça somente as coordenadas normalizadas pedidas e deixe o servidor calcular.
+- Nunca invente medida em milímetros para 48/56; classifique visualmente apenas MENOR/MAIOR/INCONCLUSIVO.
 - Se a geometria e os detalhes físicos DISCRIMINANTES coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
 - Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
 - Marca/modelo ausentes na própria peça devem retornar identified_brand/identified_model como null; ausência não é erro de marca/modelo.
@@ -228,7 +226,7 @@ Responda APENAS JSON válido:
  "contradictions":string[],
  "variant_exclusion_evidence":string[],
  "decisive_attribute_seen":string|null,
- "bore_measurements":[{"unit":number,"x_left":number|null,"x_right":number|null,"usable":boolean}],
+ "bore_size_classifications":[{"unit":number,"size_class":"MENOR|MAIOR|INCONCLUSIVO","confidence":"ALTA|MEDIA|BAIXA","evidence":string}],
  "reason":string
 }`;
     const body={
@@ -265,124 +263,53 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.positive_evidence)) d.positive_evidence=[];
     if(!Array.isArray(d.contradictions)) d.contradictions=[];
     if(!Array.isArray(d.variant_exclusion_evidence)) d.variant_exclusion_evidence=[];
-    if(!Array.isArray(d.bore_measurements)) d.bore_measurements=[];
+    if(!Array.isArray(d.bore_size_classifications)) d.bore_size_classifications=[];
+    d.bore_size_classifications=d.bore_size_classifications.map((x,idx)=>({unit:Number(x?.unit)||idx+1,size_class:upper(x?.size_class),confidence:upper(x?.confidence),evidence:norm(x?.evidence)}));
 
-    // V10.39 — medição geométrica local tem prioridade absoluta sobre coordenadas estimadas pela IA.
-    d.geometric_measurement_received=!!(geometricBoreMeasurement?.ok);
-    if(expectedBoreMm && geometricBoreMeasurement?.ok && Array.isArray(geometricBoreMeasurement.measurements)){
-      const vals=geometricBoreMeasurement.measurements.slice(0,expected.qty).map(m=>Number(m.mm)).filter(Number.isFinite);
-      if(vals.length>=expected.qty){
-        d.bore_measurements=[]; // impede uso das coordenadas estimadas pela IA.
-        d.geometric_bore_mm=vals.map(x=>Number(x.toFixed(2)));
-      }
-    }
-
-    // V10.35: medição dimensional determinística pela câmera fixa calibrada.
-    // A IA localiza apenas as bordas internas esquerda/direita em coordenadas 0..1000; o servidor converte para mm.
-    d.visual_calibration_used=false;
-    d.measured_bore_mm=[];
-    if(calibratedWidthMm && expectedBoreMm){
-      const usable=(expectedBoreMm
-        ? (Array.isArray(d.geometric_bore_mm)?d.geometric_bore_mm:[])
-        : d.bore_measurements.filter(m=>m&&m.usable===true&&Number.isFinite(Number(m.x_left))&&Number.isFinite(Number(m.x_right)))
-          .map(m=>Math.abs(Number(m.x_right)-Number(m.x_left))/1000*calibratedWidthMm))
-        .map(Number).filter(mm=>expectedBoreMm?(mm>=12&&mm<=22):(mm>5&&mm<40));
-      d.measured_bore_mm=usable.map(mm=>Number(mm.toFixed(2)));
-      if(usable.length>=Math.max(1,expected.qty)){
-        const expectedVariant=expectedBoreMm===18?56:48;
-        const classify=mm=>mm<=16.6?48:mm>=17.4?56:null;
-        const variants=usable.map(classify);
-        d.visual_calibration_used=true;
-        d.measured_bore_median_mm=Number(([...usable].sort((a,b)=>a-b)[Math.floor(usable.length/2)]).toFixed(2));
-        d.measured_bore_spread_mm=Number((Math.max(...usable)-Math.min(...usable)).toFixed(2));
-        d.measured_variants=variants;
-        d.measured_variant=variants.every(x=>x===variants[0])?variants[0]:null;
-
-        // REGRA CRÍTICA: cada unidade é julgada separadamente.
-        // Um lote 56+48 jamais pode ser aprovado pela média/mediana.
-        if(variants.some(x=>x===null)){
-          d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-          d.reason=`Medição individual entrou na zona de dúvida: ${d.measured_bore_mm.join(" / ")} mm. Nenhum lote misto ou duvidoso pode ser aprovado.`;
-          d.measurement_failure="individual_dimension_uncertain";
-        }else if(variants.some(x=>x!==expectedVariant)){
-          d.status="REPROVADO";d.error_type="modelo";
-          const wrong=usable.map((mm,idx)=>({mm,variant:variants[idx],unit:idx+1})).filter(x=>x.variant!==expectedVariant);
-          d.reason=`Lote contém variante incorreta. Pedido espera ${expectedVariant} (${expectedBoreMm} mm), mas ${wrong.map(x=>`unidade ${x.unit}: ${x.mm.toFixed(1)} mm = variante ${x.variant}`).join("; ")}.`;
-          d.contradictions.push(...wrong.map(x=>`unidade ${x.unit}: ${x.mm.toFixed(1)} mm / variante ${x.variant}`));
-          d.mixed_variant_detected=variants.some(x=>x!==variants[0]);
-        }else if(d.identified_quantity===expected.qty && !d.contradictions.length){
-          d.status="APROVADO";d.error_type="nenhum";
-          d.decisive_attribute_seen=`furos centrais medidos individualmente: ${d.measured_bore_mm.join(" / ")} mm`;
-          d.positive_evidence.push(`todas as ${expected.qty} unidades medidas como variante ${expectedVariant}`);
-          d.reason=`Todas as unidades foram medidas individualmente e correspondem à variante ${expectedVariant}: ${d.measured_bore_mm.join(" / ")} mm.`;
-        }else{
-          d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-          d.reason=`As medidas dimensionais são compatíveis, mas a quantidade visual não foi confirmada com segurança (${d.identified_quantity??"não identificada"} / esperado ${expected.qty}).`;
-        }
-      }else{
-        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.reason=`Calibração ativa e vista superior aceita, porém a análise não marcou as duas bordas internas do furo central em todas as ${expected.qty} unidades. Mantenha as peças planas como estão, com os furos centrais livres e sem objetos sobre eles; não é necessário mudar o ângulo da câmera.`;
-        d.measurement_failure="bore_edges_not_returned";
-      }
-    }
-
-    // V10.39.4 — se detector geométrico falhar, preservar diagnóstico específico.
-    if(expectedBoreMm && !d.geometric_measurement_received){
-      d.status="INCONCLUSIVO";d.error_type="inconclusivo";d.measurement_failure="geometric_bore_required";
-      d.reason="O gabarito V10.40 não produziu todas as medidas internas válidas. Mantenha os 4 marcadores pretos visíveis e as peças nas posições PEÇA 1 e PEÇA 2.";
-    }
-
-    // V10.39.2 — câmera superior fixa para 48/56; nunca devolver orientação lateral legada.
+    // V10.41 — 48/56: classificação visual MAIOR/MENOR, sem medição em mm.
+    d.visual_bore_classification_used=false;
     if(expectedBoreMm){
-      const legacy=/mude o [aâ]ngulo|[aâ]ngulo da foto|de lado|obl[ií]qu|mostrar o eixo|comprimento do eixo|proje[cç][aã]o do eixo/i.test(norm(d.reason));
-      if(legacy){
-        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.measurement_failure=d.geometric_measurement_received?"geometric_dimension_review":"geometric_bore_required";
-        d.reason=d.geometric_measurement_received
-          ?`Vista superior correta. Medição geométrica: ${(d.geometric_bore_mm||[]).join(" / ")} mm. Não mude o ângulo.`
-          :"Vista superior correta. O detector geométrico não localizou todos os furos. Não mude o ângulo.";
-      }
-    }
-
-    // V10.39 — para 48/56, NÃO permitir aprovação baseada em coordenadas da IA.
-    // A dimensão crítica precisa vir do detector geométrico local.
-    if(expectedBoreMm && d.status==="APROVADO" && !d.geometric_measurement_received){
-      d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-      d.measurement_failure="geometric_bore_required";
-      d.reason="A medição geométrica determinística do furo central não foi obtida. Para 48/56, a IA sozinha não pode aprovar.";
-    }
-
-    // V10.37.2 — saneia qualquer orientação lateral legada.
-    if(expectedBoreMm && calibratedWidthMm){
-      const legacyAngle=/ângulo|angulo|lateral|obl[ií]qu|virar|vire|de lado|comprimento do eixo|proje[cç][aã]o do eixo/i.test(norm(d.reason));
-      if(d.status==="INCONCLUSIVO" && legacyAngle){
-        d.measurement_failure="bore_edges_not_returned";
-        d.reason=`Vista superior calibrada aceita. A leitura não marcou as bordas internas do furo central de todas as ${expected.qty} unidades. Mantenha as peças planas como estão; não mude o ângulo.`;
-      }
-    }
-
-    // V10.37.1 — TRAVA DIMENSIONAL CRÍTICA.
-    // Para variantes 48/56, APROVADO só pode existir após medição calibrada válida.
-    // Nunca aceitar apenas semelhança visual/foto oficial quando a diferença decisiva é 16 x 18 mm.
-    if(expectedBoreMm && d.status==="APROVADO" && !d.visual_calibration_used){
-      d.status="INCONCLUSIVO";
-      d.error_type="inconclusivo";
-      d.measurement_failure=d.measurement_failure||"calibrated_dimension_required";
-      d.reason=`A variante ${expectedBoreMm===18?"56":"48"} exige confirmação dimensional calibrada do furo central (${expectedBoreMm} mm). A semelhança visual não é suficiente para aprovar.`;
-    }
-    if(expectedBoreMm && d.status==="APROVADO" && d.visual_calibration_used && !Number.isFinite(Number(d.measured_variant))){
-      d.status="INCONCLUSIVO";
-      d.error_type="inconclusivo";
-      d.measurement_failure="calibrated_dimension_required";
-      d.reason="A medição calibrada não classificou com segurança a variante 48/56. Não aprovar.";
-    }
-
-    // V10.38 — segunda trava independente contra lote misto.
-    if(expectedBoreMm && Array.isArray(d.measured_variants) && d.measured_variants.length){
       const expectedVariant=expectedBoreMm===18?56:48;
-      if(d.measured_variants.some(x=>x!==null && x!==expectedVariant)){
-        d.status="REPROVADO";d.error_type="modelo";d.mixed_variant_detected=true;
-        d.reason=`TRAVA DIMENSIONAL: pelo menos uma unidade não corresponde à variante ${expectedVariant}. Medidas: ${(d.measured_bore_mm||[]).join(" / ")} mm.`;
+      const expectedClass=expectedVariant===56?"MAIOR":"MENOR";
+      const cls=d.bore_size_classifications.slice(0,expected.qty);
+      d.expected_bore_class=expectedClass;
+      d.visual_bore_classes=cls.map(x=>x.size_class);
+
+      // A quantidade ainda precisa estar confirmada visualmente.
+      if(d.identified_quantity!==expected.qty){
+        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+        d.measurement_failure="bore_visual_quantity_uncertain";
+        d.reason=`A IA não confirmou com segurança as ${expected.qty} unidades do lote para classificar os furos individualmente.`;
+      }else if(cls.length<expected.qty){
+        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+        d.measurement_failure="bore_visual_classification_missing";
+        d.reason=`A IA classificou apenas ${cls.length} de ${expected.qty} furos centrais. É necessário classificar cada unidade como MAIOR ou MENOR.`;
+      }else if(cls.some(x=>!['MAIOR','MENOR'].includes(x.size_class)||x.confidence!=="ALTA")){
+        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
+        d.measurement_failure="bore_visual_classification_uncertain";
+        d.reason=`Classificação visual sem confiança alta em todas as unidades: ${cls.map(x=>`unidade ${x.unit}: ${x.size_class||'INCONCLUSIVO'} (${x.confidence||'SEM CONFIANÇA'})`).join('; ')}.`;
+      }else{
+        d.visual_bore_classification_used=true;
+        const wrong=cls.filter(x=>x.size_class!==expectedClass);
+        const mixed=new Set(cls.map(x=>x.size_class)).size>1;
+        d.mixed_variant_detected=mixed;
+        if(wrong.length){
+          d.status="REPROVADO";d.error_type="modelo";
+          d.reason=`FURO CENTRAL incompatível. Pedido espera variante ${expectedVariant} = furo ${expectedClass}. ${cls.map(x=>`unidade ${x.unit}: ${x.size_class}`).join('; ')}.`;
+          d.contradictions.push(...wrong.map(x=>`unidade ${x.unit}: furo ${x.size_class}; esperado ${expectedClass}`));
+        }else if(!d.contradictions.length){
+          d.status="APROVADO";d.error_type="nenhum";
+          d.decisive_attribute_seen=`furo central ${expectedClass.toLowerCase()} em todas as ${expected.qty} unidades`;
+          d.positive_evidence.push(...cls.map(x=>`unidade ${x.unit}: furo ${x.size_class.toLowerCase()} — ${x.evidence||'proporção visual compatível'}`));
+          d.reason=`Todas as ${expected.qty} unidades foram classificadas com confiança ALTA como furo ${expectedClass}, compatível com a variante ${expectedVariant}.`;
+        }
+      }
+
+      // Nunca devolver instruções antigas de medição/ângulo/gabarito para 48/56.
+      const legacy=/gabarito|calibra|mil[ií]metr|mm\b|mude o [aâ]ngulo|de lado|obl[ií]qu|mostrar o eixo|medição geométrica/i.test(norm(d.reason));
+      if(d.status==="INCONCLUSIVO"&&legacy){
+        d.reason=`Não foi possível classificar visualmente todos os furos como ${expectedClass} com confiança alta. Mantenha a vista superior, com a abertura central inteira e nítida.`;
+        d.measurement_failure="bore_visual_classification_uncertain";
       }
     }
 
@@ -440,7 +367,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+quadrant_jig_measurement_v10_40_2";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+visual_bore_size_classification_v10_41";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
