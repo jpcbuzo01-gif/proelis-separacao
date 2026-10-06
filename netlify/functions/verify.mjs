@@ -326,6 +326,12 @@ Responda APENAS JSON válido:
       }
     }
 
+    // V10.39.4 — se detector geométrico falhar, preservar diagnóstico específico.
+    if(expectedBoreMm && !d.geometric_measurement_received){
+      d.status="INCONCLUSIVO";d.error_type="inconclusivo";d.measurement_failure="geometric_bore_required";
+      d.reason="A câmera superior está correta, mas o detector geométrico ainda não obteve todos os furos internos válidos. Não retire por erro de produto e não mude o ângulo.";
+    }
+
     // V10.39.2 — câmera superior fixa para 48/56; nunca devolver orientação lateral legada.
     if(expectedBoreMm){
       const legacy=/mude o [aâ]ngulo|[aâ]ngulo da foto|de lado|obl[ií]qu|mostrar o eixo|comprimento do eixo|proje[cç][aã]o do eixo/i.test(norm(d.reason));
@@ -434,7 +440,7 @@ Responda APENAS JSON válido:
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+first_inner_transition_bore_v10_39_3";
+    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+adaptive_inner_bore_v10_39_4";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
