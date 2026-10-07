@@ -1641,10 +1641,18 @@ async function uploadProductPhotos(){
   const files=[...$('productPhoto').files];if(!files.length)return;
   $('uploadProductPhotoBtn').disabled=true;
   try{
+    // Busca a maior ordem já usada para acrescentar as novas fotos sem alterar o banco.
+    const {data:existingPhotos,error:orderErr}=await db.from('product_images').select('ordem').eq('product_id',editingProduct.id).order('ordem',{ascending:false}).limit(1);
+    if(orderErr)throw orderErr;
+    const basePhotoOrder=Math.max(0,Number(existingPhotos?.[0]?.ordem)||0);
     for(let n=0;n<files.length;n++){
       const blob=await compress(files[n],1600,.84),path=`${editingProduct.referencia}/${Date.now()}-${n}.jpg`;
       const {error:u}=await db.storage.from('product-images').upload(path,blob,{contentType:'image/jpeg',upsert:false});if(u)throw u;
-      const {error:ierr}=await db.from('product_images').insert({product_id:editingProduct.id,storage_path:path,origem:'admin',ordem:Date.now()+n,created_by:session.user.id});
+      // HOTFIX V10.42.1: `ordem` é INTEGER no PostgreSQL.
+      // Date.now() gera 13 dígitos e estoura o limite de INTEGER.
+      // A ordenação manual das fotos só precisa de um número pequeno.
+      const photoOrder=basePhotoOrder+n+1;
+      const {error:ierr}=await db.from('product_images').insert({product_id:editingProduct.id,storage_path:path,origem:'admin',ordem:photoOrder,created_by:session.user.id});
       if(ierr){await db.storage.from('product-images').remove([path]);throw ierr}
     }
     $('productPhoto').value='';await loadProductPhotos(editingProduct.id);
