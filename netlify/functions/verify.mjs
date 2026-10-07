@@ -64,23 +64,57 @@ async function getCatalogProduct(ref){
   return a?.[0]||null;
 }
 
-async function getReferenceImage(ref){
-  if(!SECRET || !ref) return null;
+async function signProductImagePath(path){
+  if(!SECRET || !path) return null;
   const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
-  const pr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=id&limit=1`,{headers:h});
-  if(!pr.ok) return null;
-  const pa=await pr.json(),p=pa?.[0]; if(!p) return null;
-  const ir=await fetch(`${S}/rest/v1/product_images?product_id=eq.${p.id}&select=storage_path,principal,ordem&order=principal.desc,ordem.asc&limit=1`,{headers:h});
-  if(!ir.ok) return null;
-  const ia=await ir.json(),pic=ia?.[0]; if(!pic?.storage_path) return null;
-  const sr=await fetch(`${S}/storage/v1/object/sign/product-images/${pic.storage_path}`,{
+  const sr=await fetch(`${S}/storage/v1/object/sign/product-images/${path}`,{
     method:"POST",headers:{...h,"content-type":"application/json"},body:JSON.stringify({expiresIn:300})
   });
   if(!sr.ok) return null;
-  const sd=await sr.json();
-  const signed=sd.signedURL||sd.signedUrl;
+  const sd=await sr.json(); const signed=sd.signedURL||sd.signedUrl;
   if(!signed) return null;
   return signed.startsWith("http")?signed:`${S}/storage/v1${signed}`;
+}
+async function getReferenceImagesByProductId(productId,limit=4){
+  if(!SECRET || !productId) return [];
+  const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
+  const ir=await fetch(`${S}/rest/v1/product_images?product_id=eq.${productId}&select=storage_path,principal,ordem&order=principal.desc,ordem.asc&limit=${limit}`,{headers:h});
+  if(!ir.ok) return [];
+  const ia=await ir.json(), out=[];
+  for(const pic of ia||[]){ const u=await signProductImagePath(pic?.storage_path); if(u) out.push(u); }
+  return out;
+}
+async function getReferenceImages(ref,limit=4){
+  if(!SECRET || !ref) return [];
+  const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
+  const pr=await fetch(`${S}/rest/v1/products?referencia=eq.${encodeURIComponent(ref)}&select=id&limit=1`,{headers:h});
+  if(!pr.ok) return [];
+  const pa=await pr.json(),p=pa?.[0]; if(!p) return [];
+  return getReferenceImagesByProductId(p.id,limit);
+}
+function family4856Key(p){
+  return upper(`${p?.nome||''} ${p?.descricao||''} ${p?.modelo||''} ${p?.codigo_fabricante||''}`)
+    .replace(/\b(48|56)\b/g,' ').replace(/[^A-Z0-9]+/g,' ').trim();
+}
+async function getOpposite4856Product(catalog,expectedBoreMm){
+  if(!SECRET || !catalog || !expectedBoreMm) return null;
+  const wanted=expectedBoreMm===18?'48':'56';
+  const h={apikey:SECRET,Authorization:`Bearer ${SECRET}`};
+  const sel='id,referencia,nome,descricao,modelo,codigo_fabricante';
+  const ors=`nome.ilike.*${wanted}*,descricao.ilike.*${wanted}*,modelo.ilike.*${wanted}*,codigo_fabricante.ilike.*${wanted}*`;
+  const r=await fetch(`${S}/rest/v1/products?select=${sel}&or=(${encodeURIComponent(ors)})&limit=100`,{headers:h});
+  if(!r.ok) return null;
+  const rows=await r.json(), key=family4856Key(catalog), kt=new Set(key.split(' ').filter(x=>x.length>2));
+  let best=null,bestScore=-1;
+  for(const x of rows||[]){
+    if(x.referencia===catalog.referencia) continue;
+    const txt=upper(`${x.nome||''} ${x.descricao||''} ${x.modelo||''} ${x.codigo_fabricante||''}`);
+    if(!new RegExp(`\\b${wanted}\\b`).test(txt)) continue;
+    const kx=new Set(family4856Key(x).split(' ').filter(y=>y.length>2));
+    let score=0; for(const t of kt) if(kx.has(t)) score++;
+    if(score>bestScore){bestScore=score;best=x;}
+  }
+  return bestScore>=1?best:null;
 }
 
 export default async (req) => {
@@ -116,7 +150,10 @@ export default async (req) => {
     }
     const variantText=`${expected.description} ${expected.model}`.toLowerCase();
     const expectedBoreMm=/\b56\b/.test(variantText)?18:/\b48\b/.test(variantText)?16:null;
-    const referenceImage=await getReferenceImage(expected.ref);
+    const referenceImages=await getReferenceImages(expected.ref,4);
+    const opposite4856=expectedBoreMm?await getOpposite4856Product(catalog,expectedBoreMm):null;
+    const oppositeReferenceImages=opposite4856?await getReferenceImagesByProductId(opposite4856.id,4):[];
+    const referenceImage=referenceImages[0]||null;
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
     const asDataUrl=async f=>f&&typeof f.arrayBuffer==="function"?`data:${f.type||"image/jpeg"};base64,${Buffer.from(await f.arrayBuffer()).toString("base64")}`:null;
@@ -156,7 +193,10 @@ REGRA ESPECIAL 48/56 — VISÃO DUPLA (SOMENTE ESTA FAMÍLIA):
 - A classificação do furo NUNCA substitui a confirmação do produto completo. Se a geometria geral não confirmar o centrífugo esperado, REPROVADO/INCONCLUSIVO conforme a evidência.
 - Observe SOMENTE a abertura interna escura do furo central. Ignore o aro/ressalto externo, molas, chapas metálicas e o diâmetro externo da peça.
 - A câmera superior fixa é a vista correta. Não peça foto lateral, ângulo oblíquo ou medição do eixo.
-- Use a FOTO OFICIAL como referência visual quando disponível, principalmente a proporção furo/corpo.
+- COMPARAÇÃO A × B: quando fornecidas, use as FOTOS REAIS CADASTRADAS DOS DOIS MODELOS (48 e 56) como exemplos rotulados.
+- As fotos de referência podem conter uma régua sobre o furo. A régua serve para ensinar visualmente qual referência é 48 e qual é 56; NÃO exija régua na foto do separador.
+- Compare a abertura central da unidade do separador com AMBOS os conjuntos de referência. Não aprove apenas por parecer com a referência esperada: confirme também que ela NÃO se parece mais com a variante oposta.
+- Fotos de referência são exemplos rotulados; a FOTO DO SEPARADOR continua sendo a mercadoria julgada.
 - Para cada unidade devolva bore_size_classifications com unit e size_class = "MENOR", "MAIOR" ou "INCONCLUSIVO".
 - confidence deve ser "ALTA", "MEDIA" ou "BAIXA". Só use ALTA quando a abertura interna estiver inteira, nítida e a diferença de proporção estiver clara.
 - Se duas unidades estiverem na foto, classifique as DUAS independentemente. Não use apenas "elas são iguais" como prova da variante.
@@ -249,10 +289,14 @@ Responda APENAS JSON válido:
         ...(expectedBoreMm&&focusUrls.detail1?[{type:"input_text",text:"IMAGEM 1B: ZOOM CENTRAL DA PEÇA 1. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail1,detail:"high"}]:[]),
         ...(expectedBoreMm&&focusUrls.focus2?[{type:"input_text",text:"IMAGEM 1C: RECORTE DA PEÇA 2. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus2,detail:"high"}]:[]),
         ...(expectedBoreMm&&focusUrls.detail2?[{type:"input_text",text:"IMAGEM 1D: ZOOM CENTRAL DA PEÇA 2. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail2,detail:"high"}]:[]),
-        ...(referenceImage?[
-          {type:"input_text",text:"IMAGEM 2: FOTO OFICIAL DE REFERÊNCIA DO CATÁLOGO. Use apenas como evidência complementar; não reprove por diferença estética isolada."},
-          {type:"input_image",image_url:referenceImage,detail:"high"}
-        ]:[])
+        ...(expectedBoreMm?referenceImages.flatMap((u,idx)=>[
+          {type:"input_text",text:`REFERÊNCIA ROTULADA ${idx+1} — MODELO ${expectedBoreMm===18?'56':'48'} (produto esperado). Foto real cadastrada; pode conter régua de medição.`},
+          {type:"input_image",image_url:u,detail:"high"}
+        ]):(referenceImage?[{type:"input_text",text:"IMAGEM 2: FOTO OFICIAL DE REFERÊNCIA DO CATÁLOGO. Use apenas como evidência complementar."},{type:"input_image",image_url:referenceImage,detail:"high"}]:[])),
+        ...(expectedBoreMm?oppositeReferenceImages.flatMap((u,idx)=>[
+          {type:"input_text",text:`REFERÊNCIA OPOSTA ROTULADA ${idx+1} — MODELO ${expectedBoreMm===18?'48':'56'}. Use obrigatoriamente para comparação A × B e exclusão da variante errada.`},
+          {type:"input_image",image_url:u,detail:"high"}
+        ]):[])
       ]}],
       max_output_tokens:700
     };
@@ -281,9 +325,13 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.bore_size_classifications)) d.bore_size_classifications=[];
     d.bore_size_classifications=d.bore_size_classifications.map((x,idx)=>({unit:Number(x?.unit)||idx+1,size_class:upper(x?.size_class),confidence:upper(x?.confidence),evidence:norm(x?.evidence)}));
 
-    // V10.42 — Visão Dupla exclusiva 48/56: foto completa + recortes individuais + zoom central.
+    // V10.43 — Referência A × B exclusiva 48/56: foto completa + recortes individuais + zoom central.
     d.visual_bore_classification_used=false;
     d.dual_vision_4856_used=!!(expectedBoreMm&&(focusUrls.focus1||focusUrls.detail1));
+    d.reference_ab_4856_used=!!(expectedBoreMm&&referenceImages.length&&oppositeReferenceImages.length);
+    d.reference_expected_count=referenceImages.length;
+    d.reference_opposite_count=oppositeReferenceImages.length;
+    d.reference_opposite_ref=opposite4856?.referencia||null;
     if(expectedBoreMm){
       const expectedVariant=expectedBoreMm===18?56:48;
       const expectedClass=expectedVariant===56?"MAIOR":"MENOR";
@@ -382,6 +430,7 @@ Responda APENAS JSON válido:
     if(d.status==="APROVADO") d.error_type="nenhum";
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
+    d.reference_ab_4856_used=Boolean(expectedBoreMm&&referenceImages.length&&oppositeReferenceImages.length);
     d.catalog_product_used=Boolean(catalog);
     d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+visual_bore_size_classification_v10_41";
 
