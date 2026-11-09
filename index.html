@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.42</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Proelis Separação V10.44</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,Arial;color:#18212b}header{background:#202124;color:white;padding:14px 16px;font-weight:900}.y{color:#f3c400}.w{max-width:900px;margin:auto;padding:14px}.c{background:#fff;border:1px solid #e2e6ea;border-radius:16px;padding:17px;margin-bottom:13px}button{border:0;border-radius:11px;padding:13px 16px;font-size:15px;font-weight:900;background:#f3c400;color:#111;margin-top:8px;cursor:pointer}button.full{width:100%}button.secondary{background:#e9edf1}button.danger{background:#ffe7e4;color:#9b251c}button:disabled{opacity:.55}input,select{width:100%;font-size:16px;padding:12px;margin:7px 0;border:1px solid #ccd3da;border-radius:9px;background:white}.ref{font-size:34px;font-weight:950}.qty{font-size:34px;font-weight:950}.ok,.bad,.inc,.err{padding:14px;border-radius:12px;margin-top:12px}.ok{background:#e7f7ee;color:#12683e}.bad,.err{background:#fff0ef;color:#a62b22}.inc{background:#fff7df;color:#805d00}.hide{display:none!important}.bar{height:10px;background:#e4e7ea;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#f3c400}.muted{color:#687384}.small{font-size:13px}img{width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}td input{margin:0;padding:8px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meta div,.stat{background:#f5f6f7;padding:10px;border-radius:10px}.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.nav button{margin:0;background:#e9edf1}.nav button.active{background:#f3c400}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat b{font-size:25px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef1f4;font-size:12px;font-weight:800}.order{border:1px solid #e1e5e9;border-radius:12px;padding:13px;margin-top:10px}.order h3{margin:0 0 5px}.rowactions{display:flex;gap:8px;flex-wrap:wrap}.rowactions button{width:auto}.who{font-size:13px;color:#687384}@media(max-width:620px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.rowactions button{width:100%}}
@@ -851,6 +851,12 @@ body.station-operation #autoCycleSteps{position:sticky;top:4px;z-index:5;backgro
     <div id="stationScalePanel" class="reference-box" style="margin-top:12px">
       <b>BALANÇA URANO POP-S 31/2 USB</b><div class="small" style="margin-top:4px;color:#0878ad;font-weight:800">V9.0.1 • Preparada para teste físico quando os equipamentos chegarem</div>
       <div id="stationScaleStatus" class="small muted" style="margin-top:5px">Balança física não conectada • Protocolo recomendado: PROT F.</div>
+      <div class="row" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+        <button id="stationConnectUrano" type="button">🔌 CONECTAR BALANÇA USB (COM4)</button>
+        <button id="stationDisconnectUrano" class="secondary" type="button">DESCONECTAR</button>
+      </div>
+      <div id="stationSerialDiagnostics" class="small muted" style="margin-top:8px">Diagnóstico: nenhuma conexão solicitada. Use Chrome ou Edge no Windows; escolha USB-SERIAL CH340 (COM4) se aparecer.</div>
+
       <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px">
         <label style="flex:1;min-width:180px">Simular peso (g)<input id="stationSimWeight" type="number" min="0" step="0.1" placeholder="Ex.: 650"></label>
         <button id="stationSimApply" type="button">SIMULAR PESO ESTÁVEL</button>
@@ -1669,7 +1675,7 @@ async function deleteProductPhoto(id,path,productId){
   await db.from('product_images').delete().eq('id',id);await loadProductPhotos(productId);
 }
 
-let currentPickProduct=null, visualApproved=false, weightApproved=false, scalePort=null, scaleReader=null;
+let currentPickProduct=null, visualApproved=false, weightApproved=false, scalePort=null, scaleReader=null, scaleConnected=false;
 let station={active:false,stream:null,phase:'manual',weights:[],lastWeight:0,stableSince:0,processing:false,awaitZero:false,simTimer:null,pendingApproval:null,operationMode:false,lastTriggerAt:0,autoZeroTimer:null,retryCount:0,lastItemId:null,startedAt:null,approvedLots:0,rejectedAttempts:0};
 function setStationState(text,kind='wait'){
   const el=$('stationState'); if(!el)return;
@@ -1782,9 +1788,9 @@ function updateStationReadiness(){
   const cam=$('readyCamera'),scale=$('readyScale'),st=$('readyStation');
   if(!cam||!scale||!st)return;
   const cameraOk=$('cameraSetupBadge')?.classList.contains('ok');
-  const serial=$('weightMode')?.value==='serial';
+  const serial=scaleConnected && !!scalePort;
   cam.textContent=cameraOk?'📷 Câmera: pronta':'📷 Câmera: não testada';cam.className='ready-chip '+(cameraOk?'ok':'warn');
-  scale.textContent=serial?'⚖️ Urano: modo físico':'⚖️ Urano: simulação';scale.className='ready-chip '+(serial?'ok':'warn');
+  scale.textContent=serial?'⚖️ Urano: USB conectado':'⚖️ Urano: sem leitura física';scale.className='ready-chip '+(serial?'ok':'warn');
   st.textContent=(cameraOk&&serial)?'🟢 Estação pronta':cameraOk?'🟡 Câmera pronta • balança em simulação':'🟡 Estação em preparação';
   st.className='ready-chip station '+((cameraOk&&serial)?'ok':'warn');
 }
@@ -2286,7 +2292,7 @@ async function closeScaleSerial(){
   try{if(scaleReader){await scaleReader.cancel();scaleReader.releaseLock()}}catch{}
   scaleReader=null;
   try{if(scalePort){await scalePort.close()}}catch{}
-  scalePort=null;
+  scalePort=null;scaleConnected=false;updateStationReady();
   if($('stationScaleStatus'))$('stationScaleStatus').textContent='Balança desconectada • PROT F recomendado.';
 }
 async function readScaleSerial(){
@@ -2294,6 +2300,8 @@ async function readScaleSerial(){
   if(!scalePort){
     scalePort=await navigator.serial.requestPort();
     await scalePort.open({baudRate:9600,dataBits:8,stopBits:1,parity:'none',flowControl:'none'});
+    scaleConnected=true;updateStationReady();
+    if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent='Porta aberta em 9600 8N1. Aguardando dados; ainda não foi confirmado que a porta é da Urano nem que o protocolo é PROT F.';
   }
   if($('weightMode'))$('weightMode').value='serial';
   if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟢 URANO CONECTADA • aguardando peso estável • PROT F';
@@ -2305,6 +2313,10 @@ async function readScaleSerial(){
       const {value,done}=await reader.read();if(done)break;
       if(!value)continue;
       bytes.push(...value);if(bytes.length>2048)bytes=bytes.slice(-1024);
+      if($('stationSerialDiagnostics')){
+        const hex=Array.from(value.slice(0,32),x=>x.toString(16).padStart(2,'0')).join(' ');
+        $('stationSerialDiagnostics').textContent=`Recebidos ${value.length} bytes • HEX: ${hex} • Diagnóstico apenas, sem aprovação até decodificar PROT F.`;
+      }
       const frames=parseUranoProtF(bytes);
       if(frames.length){
         const f=frames[frames.length-1];
@@ -2321,6 +2333,7 @@ async function readScaleSerial(){
           const g=f.grams;
           $('weightReading').value=g.toFixed(1);
           if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🟢 URANO • PESO ESTÁVEL: ${g.toFixed(1)} g`;
+          if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent=`PROT F interpretado • peso: ${g.toFixed(1)} g • teste retirada e retorno a zero.`;
           feedStationWeight(g);
           continue;
         }
@@ -2334,6 +2347,7 @@ async function readScaleSerial(){
   }finally{
     try{reader.releaseLock()}catch{}
     scaleReader=null;
+    scaleConnected=false;updateStationReady();
   }
 }
 function formatElapsed(ms){
@@ -2549,6 +2563,21 @@ if($('stationSimZero'))$('stationSimZero').onclick=()=>{
 
 if($('stationStop'))$('stationStop').onclick=stopStation;
 if($('connectScale'))$('connectScale').onclick=async()=>{try{await readScaleSerial()}catch(e){$('weightResult').innerHTML=`<div class="err">${esc(e.message||e)}</div>`}};
+if($('stationConnectUrano'))$('stationConnectUrano').onclick=async()=>{
+  try{
+    if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent='Escolha a porta USB-SERIAL CH340 (COM4) na janela do navegador. A identificação da balança ainda precisa ser confirmada.';
+    await readScaleSerial();
+  }catch(e){
+    scaleConnected=false;updateStationReady();
+    if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent='Falha ao conectar: '+(e.message||e);
+    if($('stationScaleStatus'))$('stationScaleStatus').textContent='🔴 Balança não conectada';
+  }
+};
+if($('stationDisconnectUrano'))$('stationDisconnectUrano').onclick=async()=>{
+  await closeScaleSerial();
+  if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent='Desconectada. A simulação permanece disponível.';
+};
+
 if($('disconnectScale'))$('disconnectScale').onclick=async()=>{await closeScaleSerial();$('weightResult').innerHTML='<div class="inc">Balança desconectada.</div>'};
 if($('weightReading'))$('weightReading').oninput=()=>{if(station.active&&$('weightMode').value==='simulacao'){const n=Number(String($('weightReading').value).replace(',','.'));if(Number.isFinite(n)){for(let k=0;k<4;k++)station.weights.push({g:n,t:Date.now()-k*200});feedStationWeight(n)}}};
 if($('weightMode'))$('weightMode').onchange=()=>{const serial=$('weightMode').value==='serial';$('connectScale').style.display=serial?'inline-block':'none';if($('disconnectScale'))$('disconnectScale').style.display=serial?'inline-block':'none'};
