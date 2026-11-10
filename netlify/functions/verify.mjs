@@ -151,13 +151,13 @@ export default async (req) => {
     const variantText=`${expected.description} ${expected.model}`.toLowerCase();
     const expectedBoreMm=/\b56\b/.test(variantText)?18:/\b48\b/.test(variantText)?16:null;
     const referenceImages=await getReferenceImages(expected.ref,4);
-    const opposite4856=expectedBoreMm?await getOpposite4856Product(catalog,expectedBoreMm):null;
+    const opposite4856=null;
     const oppositeReferenceImages=opposite4856?await getReferenceImagesByProductId(opposite4856.id,4):[];
     const referenceImage=referenceImages[0]||null;
     const b64=Buffer.from(await photo.arrayBuffer()).toString("base64");
     const mime=photo.type || "image/jpeg";
     const asDataUrl=async f=>f&&typeof f.arrayBuffer==="function"?`data:${f.type||"image/jpeg"};base64,${Buffer.from(await f.arrayBuffer()).toString("base64")}`:null;
-    const focusUrls=expectedBoreMm?{focus1:await asDataUrl(focus1),focus2:await asDataUrl(focus2),detail1:await asDataUrl(detail1),detail2:await asDataUrl(detail2)}:{};
+    const focusUrls=false?{focus1:await asDataUrl(focus1),focus2:await asDataUrl(focus2),detail1:await asDataUrl(detail1),detail2:await asDataUrl(detail2)}:{};
     const prompt=`Você é o sistema de conferência visual de expedição da Proelis.
 Sua prioridade é EVITAR FALSO POSITIVO: nunca aprove um item apenas porque ele parece pertencer à mesma família do produto esperado.
 
@@ -180,31 +180,12 @@ Medidas: ${norm(catalog?.medidas)}
 Especificações: ${JSON.stringify(catalog?.especificacoes||{})}
 Observações de separação: ${norm(catalog?.observacoes_separacao)}
 Calibração da câmera fixa: ${calibratedWidthMm?`ATIVA — largura total da imagem corresponde aproximadamente a ${calibratedWidthMm.toFixed(3)} mm no plano calibrado`:"não disponível"}
-Medida decisiva do FURO CENTRAL nesta família: ${expectedBoreMm?`${expectedBoreMm} mm (variante ${expectedBoreMm===18?"56":"48"})`:"não cadastrada/inferida"}
-
-REGRA ESPECIAL 48/56 — VISÃO DUPLA (SOMENTE ESTA FAMÍLIA):
-- Esta regra especial NÃO se aplica a rolamentos nem aos demais produtos. Preserve a análise normal de marcações/códigos para eles.
-- Para 48/56, use a FOTO COMPLETA para confirmar PRIMEIRO que cada unidade pertence ao centrífugo/platinado correto: formato, molas, contatos, chapas, terminais, furos e construção geral.
-- Depois use os RECORTES INDIVIDUAIS e os DETALHES CENTRAIS fornecidos para classificar a variante.
-- NÃO faça medição em milímetros e NÃO dependa de régua, gabarito ou calibração.
-- A diferença operacional é VISUAL: variante 48 = FURO CENTRAL MENOR; variante 56 = FURO CENTRAL MAIOR.
-- Julgue CADA unidade separadamente pela proporção da abertura interna central em relação ao corpo/estrutura DA MESMA UNIDADE.
-- Não compare apenas uma peça com a outra. Duas peças iguais também precisam ser classificadas individualmente.
-- A classificação do furo NUNCA substitui a confirmação do produto completo. Se a geometria geral não confirmar o centrífugo esperado, REPROVADO/INCONCLUSIVO conforme a evidência.
-- Observe SOMENTE a abertura interna escura do furo central. Ignore o aro/ressalto externo, molas, chapas metálicas e o diâmetro externo da peça.
-- A câmera superior fixa é a vista correta. Não peça foto lateral, ângulo oblíquo ou medição do eixo.
-- COMPARAÇÃO A × B: quando fornecidas, use as FOTOS REAIS CADASTRADAS DOS DOIS MODELOS (48 e 56) como exemplos rotulados.
-- As fotos de referência podem conter uma régua sobre o furo. A régua serve para ensinar visualmente qual referência é 48 e qual é 56; NÃO exija régua na foto do separador.
-- Compare a abertura central da unidade do separador com AMBOS os conjuntos de referência. Não aprove apenas por parecer com a referência esperada: confirme também que ela NÃO se parece mais com a variante oposta.
-- Fotos de referência são exemplos rotulados; a FOTO DO SEPARADOR continua sendo a mercadoria julgada.
-- Para cada unidade devolva bore_size_classifications com unit e size_class = "MENOR", "MAIOR" ou "INCONCLUSIVO".
-- confidence deve ser "ALTA", "MEDIA" ou "BAIXA". Só use ALTA quando a abertura interna estiver inteira, nítida e a diferença de proporção estiver clara.
-- Se duas unidades estiverem na foto, classifique as DUAS independentemente. Não use apenas "elas são iguais" como prova da variante.
-- Pedido variante 48: todas as unidades precisam ser MENOR com confiança ALTA para aprovação visual desta característica.
-- Pedido variante 56: todas as unidades precisam ser MAIOR com confiança ALTA para aprovação visual desta característica.
-- MAIOR+MENOR em qualquer ordem = lote misto e deve ser REPROVADO.
-- Se alguma unidade for INCONCLUSIVO ou confiança diferente de ALTA = INCONCLUSIVO, nunca aprove por palpite.
-- NÃO invente 16 mm/18 mm. A tarefa é apenas MAIOR versus MENOR.
+REGRA ESPECIAL 48/56 — IDENTIFICAÇÃO POR PESO (V10.49):
+- A diferença entre centrífugos/platinados 48 e 56 é conferida EXCLUSIVAMENTE pelo peso da Urano, fora da IA.
+- Referências operacionais: modelo 48 = 43 g/unidade; modelo 56 = 44 g/unidade. A balança tem divisão de 2 g e existe risco de confusão aceito pelo operador.
+- NÃO classifique, meça ou compare o tamanho do furo central, eixo, diâmetro, proporção MAIOR/MENOR, régua ou gabarito para distinguir 48/56.
+- Sua tarefa visual nessa família é somente conferir o TIPO de peça (centrífugo/platinado), quantidade e contradições técnicas explicitamente visíveis. Não reprove nem torne inconclusivo apenas porque não é possível distinguir 48/56 visualmente.
+- Não invente modelo impresso. A variante é validada pelo peso no aplicativo, não pela sua classificação visual.
 
 REGRA UNIVERSAL DE APROVAÇÃO:
 - APROVADO exige EVIDÊNCIA POSITIVA suficiente de que a FOTO DO SEPARADOR corresponde ao produto esperado.
@@ -212,26 +193,20 @@ REGRA UNIVERSAL DE APROVAÇÃO:
 - Se houver modelo, código, tensão, capacitância, medida, bitola, espessura, dimensão, potência, vedação, variante, marcação ou outra característica técnica visível que diferencie variantes, use essa característica como evidência decisiva.
 - Quando o cadastro tiver uma característica técnica decisiva (modelo/código/capacidade/medida etc.), procure essa característica primeiro.
 - Se ela estiver claramente visível e compatível, isso é evidência forte para APROVAR, mesmo que outros textos secundários estejam pequenos ou parcialmente ilegíveis.
-- Se a característica decisiva não estiver legível e existirem variantes visualmente indistinguíveis, responda INCONCLUSIVO. Nunca invente a variante.
+- Se a característica decisiva não estiver legível e existirem variantes visualmente indistinguíveis, responda INCONCLUSIVO, EXCETO 48/56, cuja variante é decidida exclusivamente pelo peso externo.
 - Se aparecer uma característica incompatível com o esperado, responda REPROVADO.
 - MUITO IMPORTANTE: transcreva em visible_markings EXATAMENTE os códigos/modelos realmente legíveis na FOTO DO SEPARADOR. Não copie o modelo esperado para identified_model se ele não estiver legível na foto.
 - Se a foto mostrar explicitamente um código técnico diferente do esperado (ex.: 6200 quando esperado 6201), isso domina qualquer semelhança visual/foto oficial e deve ser REPROVADO.
 - A FOTO OFICIAL ajuda a localizar características e reconhecer o produto.
 - PRODUTOS SEM MARCAÇÃO VISÍVEL: algumas peças (ex.: centrífugos, tampas, ventoinhas e componentes moldados) podem não trazer marca, modelo ou código impressos. Nesses casos, NÃO exija texto inexistente e NÃO responda INCONCLUSIVO apenas porque marca/modelo não estão legíveis.
 - Quando a peça esperada não possui marcação física visível, compare diretamente FOTO DO SEPARADOR x FOTO OFICIAL usando características físicas discriminantes: formato, geometria, número/posição de furos, encaixes, nervuras, recortes, abas, diâmetros relativos, perfil, cor quando realmente distintiva e outros detalhes estruturais.
-- ATENÇÃO A VARIANTES QUASE IDÊNTICAS: não trate “parecido com a foto” como suficiente quando pequenas dimensões físicas diferenciam modelos. Procure explicitamente diferenças no furo central, diâmetro do furo central, diâmetro, distância entre contatos, posição/altura de terminais, abas, furos, encaixes e proporções.
-- Para centrífugos/platinados 48/56, use a classificação visual especial acima: 48 = abertura central MENOR; 56 = abertura central MAIOR. Não estime milímetros.
-- IMPORTANTE SOBRE O ÂNGULO: para 48/56, a vista superior fixa é a vista normal. A abertura central deve estar inteira e visível.
-- Se o furo central estiver escondido, inclinado demais, desfocado ou cortado, responda INCONCLUSIVO.
-- Se houver mais de uma unidade, mantenha todas deitadas, lado a lado, mesma orientação, furos centrais totalmente visíveis e sem sobreposição.
-- Nunca invente medida em milímetros para 48/56; classifique visualmente apenas MENOR/MAIOR/INCONCLUSIVO.
 - Se a geometria e os detalhes físicos DISCRIMINANTES coincidirem claramente com a FOTO OFICIAL, a quantidade estiver correta e NÃO houver contradição visível, essa correspondência visual pode ser EVIDÊNCIA POSITIVA suficiente para APROVAR.
-- Se existirem variantes cadastradas/visualmente possíveis que não possam ser distinguidas pela foto, continue INCONCLUSIVO; foto parecida não deve virar aprovação por adivinhação.
+- Se existirem variantes indistinguíveis, continue INCONCLUSIVO, EXCETO 48/56 quando o tipo e quantidade estiverem visualmente confirmados e a variante for validada pelo peso externo.
 - Marca/modelo ausentes na própria peça devem retornar identified_brand/identified_model como null; ausência não é erro de marca/modelo.
 - O código interno Proelis pode não estar impresso na mercadoria; não exija que ele esteja visível.
 - Quantidade deve corresponder ao lote solicitado quando for possível contar com segurança.
 - Não adivinhe texto, código ou quantidade escondida/ilegível.
-- Peso é validado separadamente pelo sistema. Peso compatível nunca transforma identificação visual duvidosa em APROVADO.
+- Peso é validado separadamente pelo sistema. Peso compatível não substitui confirmação visual do TIPO e QUANTIDADE. EXCEÇÃO 48/56: a variante específica é decidida exclusivamente pelo peso no aplicativo; não exija confirmação visual do tamanho do furo.
 
 EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Esperado 6201 e foto mostra 6200 => REPROVADO/modelo.
@@ -239,8 +214,6 @@ EXEMPLOS DA REGRA (válidos para QUALQUER categoria):
 - Esperado peça de uma variante específica, mas o código/medida que diferencia as variantes não pode ser lido => INCONCLUSIVO.
 - Produto esperado e foto confirmam claramente os atributos técnicos relevantes => APROVADO.
 - Peça sem qualquer marca/modelo impresso, mas geometria, furos, encaixes e detalhes estruturais DISCRIMINANTES coincidem claramente com a foto oficial, sem contradições => APROVADO; identified_brand e identified_model podem ser null.
-- Centrífugo/platinado 56 x 48: se a variante depende do furo central maior/menor, compare o diâmetro interno do furo central. Se isso não estiver claramente visível => INCONCLUSIVO, nunca aprove só pelo formato geral.
-- Centrífugo/platinado com furo central oculto, cortado ou fora do plano calibrado => INCONCLUSIVO. Com câmera fixa calibrada, peça deitada + furo central totalmente visível é a posição preferida.
 - Peça sem marcação e foto oficial insuficiente para excluir uma variante visualmente semelhante => INCONCLUSIVO.
 
 REGRA ESPECIAL DE EQUIVALÊNCIA JÁ CADASTRADA:
@@ -253,7 +226,6 @@ B) Existe alguma contradição com o cadastro ou com a foto oficial?
 C) A evidência visível confirma uma característica decisiva do cadastro ou, para produto sem marcação, a geometria/detalhes estruturais coincidem claramente com a foto oficial?
 D) A marca/modelo realmente existe impresso na peça? Se não existir, não exija sua leitura.
 Se uma característica decisiva estiver claramente confirmada, OU a peça sem marcação tiver correspondência estrutural clara com a foto oficial, e não houver contradições, APROVADO é permitido.
-EXCEÇÃO CRÍTICA: nas variantes 48/56 deste centrífugo/platinado, semelhança geral NUNCA basta para APROVAR. A aprovação final exige DUAS evidências: (1) produto completo compatível e (2) classificação individual do furo MENOR/MAIOR com confiança ALTA usando os recortes da Visão Dupla.
 Se não houver evidência suficiente para diferenciar variantes, INCONCLUSIVO.
 Se houver característica incompatível, REPROVADO.
 
@@ -285,15 +257,15 @@ Responda APENAS JSON válido:
       input:[{role:"user",content:[
         {type:"input_text",text:prompt+"\n\nIMAGEM 1: FOTO DO SEPARADOR (imagem a ser julgada)."},
         {type:"input_image",image_url:`data:${mime};base64,${b64}`,detail:"high"},
-        ...(expectedBoreMm&&focusUrls.focus1?[{type:"input_text",text:"IMAGEM 1A: RECORTE DA PEÇA 1. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus1,detail:"high"}]:[]),
-        ...(expectedBoreMm&&focusUrls.detail1?[{type:"input_text",text:"IMAGEM 1B: ZOOM CENTRAL DA PEÇA 1. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail1,detail:"high"}]:[]),
-        ...(expectedBoreMm&&focusUrls.focus2?[{type:"input_text",text:"IMAGEM 1C: RECORTE DA PEÇA 2. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus2,detail:"high"}]:[]),
-        ...(expectedBoreMm&&focusUrls.detail2?[{type:"input_text",text:"IMAGEM 1D: ZOOM CENTRAL DA PEÇA 2. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail2,detail:"high"}]:[]),
-        ...(expectedBoreMm?referenceImages.flatMap((u,idx)=>[
+        ...(false&&focusUrls.focus1?[{type:"input_text",text:"IMAGEM 1A: RECORTE DA PEÇA 1. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus1,detail:"high"}]:[]),
+        ...(false&&focusUrls.detail1?[{type:"input_text",text:"IMAGEM 1B: ZOOM CENTRAL DA PEÇA 1. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail1,detail:"high"}]:[]),
+        ...(false&&focusUrls.focus2?[{type:"input_text",text:"IMAGEM 1C: RECORTE DA PEÇA 2. Use para conferir a peça individualmente."},{type:"input_image",image_url:focusUrls.focus2,detail:"high"}]:[]),
+        ...(false&&focusUrls.detail2?[{type:"input_text",text:"IMAGEM 1D: ZOOM CENTRAL DA PEÇA 2. Use SOMENTE como detalhe adicional do furo; a foto completa continua obrigatória."},{type:"input_image",image_url:focusUrls.detail2,detail:"high"}]:[]),
+        ...(false?referenceImages.flatMap((u,idx)=>[
           {type:"input_text",text:`REFERÊNCIA ROTULADA ${idx+1} — MODELO ${expectedBoreMm===18?'56':'48'} (produto esperado). Foto real cadastrada; pode conter régua de medição.`},
           {type:"input_image",image_url:u,detail:"high"}
         ]):(referenceImage?[{type:"input_text",text:"IMAGEM 2: FOTO OFICIAL DE REFERÊNCIA DO CATÁLOGO. Use apenas como evidência complementar."},{type:"input_image",image_url:referenceImage,detail:"high"}]:[])),
-        ...(expectedBoreMm?oppositeReferenceImages.flatMap((u,idx)=>[
+        ...(false?oppositeReferenceImages.flatMap((u,idx)=>[
           {type:"input_text",text:`REFERÊNCIA OPOSTA ROTULADA ${idx+1} — MODELO ${expectedBoreMm===18?'48':'56'}. Use obrigatoriamente para comparação A × B e exclusão da variante errada.`},
           {type:"input_image",image_url:u,detail:"high"}
         ]):[])
@@ -325,57 +297,12 @@ Responda APENAS JSON válido:
     if(!Array.isArray(d.bore_size_classifications)) d.bore_size_classifications=[];
     d.bore_size_classifications=d.bore_size_classifications.map((x,idx)=>({unit:Number(x?.unit)||idx+1,size_class:upper(x?.size_class),confidence:upper(x?.confidence),evidence:norm(x?.evidence)}));
 
-    // V10.43 — Referência A × B exclusiva 48/56: foto completa + recortes individuais + zoom central.
+    // V10.49: a variante 48/56 é decidida pelo peso no frontend.
+    // Nenhuma classificação de furo pode alterar o resultado da conferência visual.
     d.visual_bore_classification_used=false;
-    d.dual_vision_4856_used=!!(expectedBoreMm&&(focusUrls.focus1||focusUrls.detail1));
-    d.reference_ab_4856_used=!!(expectedBoreMm&&referenceImages.length&&oppositeReferenceImages.length);
-    d.reference_expected_count=referenceImages.length;
-    d.reference_opposite_count=oppositeReferenceImages.length;
-    d.reference_opposite_ref=opposite4856?.referencia||null;
-    if(expectedBoreMm){
-      const expectedVariant=expectedBoreMm===18?56:48;
-      const expectedClass=expectedVariant===56?"MAIOR":"MENOR";
-      const cls=d.bore_size_classifications.slice(0,expected.qty);
-      d.expected_bore_class=expectedClass;
-      d.visual_bore_classes=cls.map(x=>x.size_class);
-
-      // A quantidade ainda precisa estar confirmada visualmente.
-      if(d.identified_quantity!==expected.qty){
-        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.measurement_failure="bore_visual_quantity_uncertain";
-        d.reason=`A IA não confirmou com segurança as ${expected.qty} unidades do lote para classificar os furos individualmente.`;
-      }else if(cls.length<expected.qty){
-        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.measurement_failure="bore_visual_classification_missing";
-        d.reason=`A IA classificou apenas ${cls.length} de ${expected.qty} furos centrais. É necessário classificar cada unidade como MAIOR ou MENOR.`;
-      }else if(cls.some(x=>!['MAIOR','MENOR'].includes(x.size_class)||x.confidence!=="ALTA")){
-        d.status="INCONCLUSIVO";d.error_type="inconclusivo";
-        d.measurement_failure="bore_visual_classification_uncertain";
-        d.reason=`Classificação visual sem confiança alta em todas as unidades: ${cls.map(x=>`unidade ${x.unit}: ${x.size_class||'INCONCLUSIVO'} (${x.confidence||'SEM CONFIANÇA'})`).join('; ')}.`;
-      }else{
-        d.visual_bore_classification_used=true;
-        const wrong=cls.filter(x=>x.size_class!==expectedClass);
-        const mixed=new Set(cls.map(x=>x.size_class)).size>1;
-        d.mixed_variant_detected=mixed;
-        if(wrong.length){
-          d.status="REPROVADO";d.error_type="modelo";
-          d.reason=`FURO CENTRAL incompatível. Pedido espera variante ${expectedVariant} = furo ${expectedClass}. ${cls.map(x=>`unidade ${x.unit}: ${x.size_class}`).join('; ')}.`;
-          d.contradictions.push(...wrong.map(x=>`unidade ${x.unit}: furo ${x.size_class}; esperado ${expectedClass}`));
-        }else if(!d.contradictions.length){
-          d.status="APROVADO";d.error_type="nenhum";
-          d.decisive_attribute_seen=`furo central ${expectedClass.toLowerCase()} em todas as ${expected.qty} unidades`;
-          d.positive_evidence.push(...cls.map(x=>`unidade ${x.unit}: furo ${x.size_class.toLowerCase()} — ${x.evidence||'proporção visual compatível'}`));
-          d.reason=`Todas as ${expected.qty} unidades foram classificadas com confiança ALTA como furo ${expectedClass}, compatível com a variante ${expectedVariant}.`;
-        }
-      }
-
-      // Nunca devolver instruções antigas de medição/ângulo/gabarito para 48/56.
-      const legacy=/gabarito|calibra|mil[ií]metr|mm\b|mude o [aâ]ngulo|de lado|obl[ií]qu|mostrar o eixo|medição geométrica/i.test(norm(d.reason));
-      if(d.status==="INCONCLUSIVO"&&legacy){
-        d.reason=`Não foi possível classificar visualmente todos os furos como ${expectedClass} com confiança alta. Mantenha a vista superior, com a abertura central inteira e nítida.`;
-        d.measurement_failure="bore_visual_classification_uncertain";
-      }
-    }
+    d.dual_vision_4856_used=false;
+    d.reference_ab_4856_used=false;
+    d.bore_size_classifications=[];
 
     // V8.4: trava universal contra falso positivo.
     // Uma contradição explícita jamais pode terminar como APROVADO.
@@ -430,9 +357,9 @@ Responda APENAS JSON válido:
     if(d.status==="APROVADO") d.error_type="nenhum";
     if(d.status==="INCONCLUSIVO") d.error_type="inconclusivo";
     d.reference_image_used=Boolean(referenceImage);
-    d.reference_ab_4856_used=Boolean(expectedBoreMm&&referenceImages.length&&oppositeReferenceImages.length);
+    d.reference_ab_4856_used=false;
     d.catalog_product_used=Boolean(catalog);
-    d.validation_policy="explicit_code_guard_v8_4_2+shaft_side_view_v10_33+visual_bore_size_classification_v10_41";
+    d.validation_policy="explicit_code_guard_v8_4_2+weight_variant_4856_v10_49";
 
     return new Response(JSON.stringify(d),{status:200,headers:{"content-type":"application/json"}});
   }catch(e){
