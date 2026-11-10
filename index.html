@@ -1959,7 +1959,7 @@ async function startStation(){
     station.active=true;station.phase='waiting';setAutoCycleStep('weight');station.startedAt=station.startedAt||Date.now();if(!station.metricRun)stationMetricStart();setOperationMode(true);station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
     $('stationStart').classList.add('hide');$('stationStop').classList.remove('hide');
     setStationState(stationPromptPlace(),'wait');
-    $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando balança';
+    $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando nova leitura pela tecla P';
     // If Web Serial is available, user can connect the scale. Otherwise simulation remains usable.
     if($('weightMode')&&$('weightMode').value!=='serial')$('weightMode').value='simulacao';
     if($('stationScaleStatus'))$('stationScaleStatus').textContent=$('weightMode')?.value==='serial'?'MODO BALANÇA FÍSICA • aguardando leituras PROT F.':'MODO SIMULAÇÃO • Urano POP-S 31/2 USB aguardando instalação.';
@@ -2142,8 +2142,15 @@ function captureStationPhoto(){
   return new Promise(res=>c.toBlob(res,'image/jpeg',0.9));
 }
 async function stationAnalyzeStableWeight(measured){
-  if(!station.active||station.processing||station.awaitZero)return;
-  if(Date.now()-station.lastTriggerAt<1800)return;station.lastTriggerAt=Date.now();
+  if(!station.active||station.processing||station.awaitZero){
+    if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🟠 76 g/LEITURA RECEBIDA, MAS ESTAÇÃO BLOQUEADA: ${!station.active?'não iniciada':station.processing?'processando':'aguardando retirada/zero'}`;
+    return;
+  }
+  if(Date.now()-station.lastTriggerAt<1800){
+    if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟠 LEITURA RECEBIDA • aguardando intervalo de segurança de 1,8 s. Pressione P novamente.';
+    return;
+  }
+  station.lastTriggerAt=Date.now();
   const x=items[i]; if(!x)return;
   const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining),cfg=weightCfg(currentPickProduct,batchQty);
   station.processing=true;setStationState('🔵 ANALISANDO PRODUTO...','analyze');
@@ -2337,13 +2344,22 @@ async function readScaleSerial(){
           // V10.45: PROT F transmite uma leitura estável ao pressionar P.
           // Não exigir quatro amostras em 1,2 s como no modo de transmissão contínua.
           // O frame STX...ETX já foi validado pelo parser acima.
+          // Uma impressão P entrega uma amostra estável completa no PROT F.
+          // Mostrar claramente por que a transição ocorre ou não ocorre.
+          if($('stationSensors'))$('stationSensors').textContent=`📷 Câmera pronta • ⚖️ ${g.toFixed(1)} g (PROT F)`;
           if(station.active && g>2 && !station.awaitZero && !station.processing){
             station.lastWeight=g;
-            if($('stationSensors'))$('stationSensors').textContent=`📷 Câmera pronta • ⚖️ ${g.toFixed(1)} g (PROT F)`;
-            stationAnalyzeStableWeight(g);
-          }else{
-            // Mantém leitura do zero para concluir a retirada após aprovação.
+            if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🔵 ${g.toFixed(1)} g RECEBIDOS • iniciando PESO → FOTO`;
+            void stationAnalyzeStableWeight(g).catch(e=>{
+              if($('stationScaleStatus'))$('stationScaleStatus').textContent='🔴 ERRO NA TRANSIÇÃO PESO → FOTO: '+(e?.message||String(e));
+            });
+          }else if(station.active && station.awaitZero){
             feedStationWeight(g);
+            if(g>2 && $('stationScaleStatus'))$('stationScaleStatus').textContent=`🟠 ${g.toFixed(1)} g • aguardando retirada e ZERO`;
+          }else if(station.active && station.processing){
+            if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🔵 ${g.toFixed(1)} g • conferência em andamento`;
+          }else{
+            if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🟠 ${g.toFixed(1)} g RECEBIDOS • clique INICIAR ESTAÇÃO antes de pressionar P`;
           }
           continue;
         }
