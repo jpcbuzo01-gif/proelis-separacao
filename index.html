@@ -1691,7 +1691,7 @@ function setOperationMode(on){
 function stationCurrentInfo(){
   const x=items[i];if(!x)return null;
   const confirmed=Number(x.quantidade_conferida)||itemConfirmed||0;
-  const remaining=Math.max(0,Number(x.quantidade)-confirmed),batch=Math.min(10,remaining);
+  const remaining=Math.max(0,Number(x.quantidade)-confirmed),batch=Math.min(scaleVariant4856()?2:10,remaining);
   const p=currentPickProduct||{};
   return {x,confirmed,remaining,batch,model:p.modelo||x.modelo||'',brand:p.marca||x.marca||'',location:p.localizacao_estoque||''};
 }
@@ -1705,18 +1705,15 @@ function stationPromptPlace(){
 }
 function updateStationCycle(){
   if(!$('stationCycle')||!items[i])return;updateStationIdentity();
-  const x=items[i],confirmed=Number(x.quantidade_conferida)||itemConfirmed||0,remaining=Math.max(0,x.quantidade-confirmed),batch=Math.min(10,remaining);
+  const x=items[i],confirmed=Number(x.quantidade_conferida)||itemConfirmed||0,remaining=Math.max(0,x.quantidade-confirmed),batch=Math.min(scaleVariant4856()?2:10,remaining);
   $('stationCycle').innerHTML=`ITEM <b>${i+1}/${items.length}</b> • REF. <b>${esc(x.referencia)}</b><br>Conferidas: <b>${confirmed}/${x.quantidade}</b> • Lote atual: <b>${batch}</b> un.${station.retryCount?` • Tentativa: <b>${station.retryCount+1}</b>`:''}`;
 }
 function stationLast(text){if($('stationLast'))$('stationLast').textContent='Última conferência: '+text}
 function inconclusiveGuidance(d,x,batchQty){
   const _dimTxt=`${x?.descricao||''} ${x?.modelo||''}`.toLowerCase();
   const _is4856=/\b(48|56)\b/.test(_dimTxt);
-  if(_is4856){
-    const expectedClass=/\b56\b/.test(_dimTxt)?'MAIOR':'MENOR';
-    const cls=Array.isArray(d?.bore_size_classifications)?d.bore_size_classifications:[];
-    if(cls.length)return {title:`IA: FURO ${expectedClass} ESPERADO`,text:`${cls.map(x=>`Peça ${x.unit}: ${x.size_class||'INCONCLUSIVO'} (${x.confidence||'—'})`).join(' • ')}. Mantenha a vista superior e os furos centrais totalmente visíveis.`};
-    return {title:`MOSTRE CLARAMENTE O FURO CENTRAL`,text:`A IA precisa classificar cada peça como furo MAIOR ou MENOR. Para este item, o esperado é ${expectedClass}. Não é necessário medir nem usar gabarito.`};
+  if(_is4856 && scaleVariant4856()){
+    return {title:'NOVA FOTO OU PESO NECESSÁRIO',text:'A variante 48/56 é conferida pelo peso da Urano, não pelo furo. Mostre todas as unidades para a IA confirmar o tipo e a quantidade.'};
   }
 
   const reason=String(d?.reason||'').toLowerCase();
@@ -2152,7 +2149,7 @@ async function stationAnalyzeStableWeight(measured){
   }
   station.lastTriggerAt=Date.now();
   const x=items[i]; if(!x)return;
-  const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(10,remaining),cfg=weightCfg(currentPickProduct,batchQty);
+  const remaining=x.quantidade-itemConfirmed,batchQty=Math.min(scaleVariant4856()?2:10,remaining),cfg=weightCfg(currentPickProduct,batchQty);
   station.processing=true;setStationState('🔵 ANALISANDO PRODUTO...','analyze');
   try{
     if(cfg.required&&!cfg.valid){
@@ -2166,7 +2163,7 @@ async function stationAnalyzeStableWeight(measured){
       if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
       return;
     }
-    setAutoCycleStep('photo');setStationState('🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
+    setAutoCycleStep('photo');setStationState(cfg.variant4856?'🔵 PESO NA FAIXA 48/56 — RISCO DE RESOLUÇÃO 2 g • FOTO...':'🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
     const captureDelay=Math.max(250,Number($('autoCaptureDelay')?.value||650));
     setStationState(`🔵 PESO ESTÁVEL — FOTO AUTOMÁTICA EM ${(captureDelay/1000).toFixed(2).replace('.',',')} s...`,'analyze');
     await new Promise(r=>setTimeout(r,captureDelay));
@@ -2175,11 +2172,10 @@ async function stationAnalyzeStableWeight(measured){
     const blob=await captureStationPhoto();
     if(!blob)throw new Error('Não foi possível capturar a imagem da câmera.');
     const expectedVariantText=`${x.descricao||''} ${x.modelo||''}`.toLowerCase();
-    const dimensional4856=/\b(48|56)\b/.test(expectedVariantText);
+    const dimensional4856=!!scaleVariant4856();
     window.__geometricBoreResult=null;
     if(dimensional4856){
-      const expectedClass=/\b56\b/.test(expectedVariantText)?'MAIOR':'MENOR';
-      setStationState(`🔵 IA COMPARANDO 48 × 56 — REFERÊNCIAS REAIS + CADA PEÇA — ESPERADO: ${expectedClass}...`,'analyze');
+      setStationState('🔵 PESO COMPATÍVEL — IA CONFERINDO TIPO E QUANTIDADE (SEM MEDIR FURO)...','analyze');
       const gd=$('geometryDiagnostic');if(gd)gd.style.display='none';
     }
     const f=new File([blob],`estacao-${Date.now()}.jpg`,{type:'image/jpeg'});
@@ -2190,7 +2186,7 @@ async function stationAnalyzeStableWeight(measured){
     }
     setAutoCycleStep('ai');
     const activeCal=window.visualCalibration||loadStationConfig().visualCalibration||null;
-    setStationState(dimensional4856?'🔵 IA CLASSIFICANDO FURO MAIOR / MENOR...':(activeCal?.mmPerPixel>0?`🔵 IA + MEDIÇÃO CALIBRADA (${Number(activeCal.mmPerPixel).toFixed(4)} mm/px)...`:'🔵 IA CONFERINDO PRODUTO...'),'analyze');
+    setStationState(dimensional4856?'🔵 IA CONFERINDO TIPO E QUANTIDADE — VARIANTE PELO PESO...':(activeCal?.mmPerPixel>0?`🔵 IA + MEDIÇÃO CALIBRADA (${Number(activeCal.mmPerPixel).toFixed(4)} mm/px)...`:'🔵 IA CONFERINDO PRODUTO...'),'analyze');
     await $('verify').onclick();
     stationMetricAttempt(window.__lastVerifyResult||{});
     // V10.48: conclusão aguardada diretamente, sem timer ou retorno a zero.
@@ -2273,7 +2269,24 @@ function feedStationWeight(g){
   const stable=(max-min)<=Math.max(1,g*0.002);
   if(stable)stationAnalyzeStableWeight(g);
 }
+// V10.49: identificação operacional 48/56 exclusivamente por peso da Urano.
+function scaleVariant4856(){
+  const x=items?.[i]||{},p=currentPickProduct||{};
+  const s=`${x.descricao||''} ${x.modelo||''} ${p.nome||''} ${p.modelo||''}`.toLowerCase();
+  if(!/centr[ií]fug|platinad/.test(s))return null;
+  const has48=/\b48\b/.test(s),has56=/\b56\b/.test(s);
+  if(has48===has56)return null;
+  return has48?{variant:48,unitGrams:43}:{variant:56,unitGrams:44};
+}
 function weightCfg(p,qty){
+  const special=scaleVariant4856();
+  if(special){
+    const expected=special.unitGrams*qty;
+    // Faixas adjacentes: 48=43 g/un, 56=44 g/un. Precisão Urano: 2 g.
+    // Tolerância de 1 g por lote (não por unidade); valores sobrepostos continuam risco conhecido.
+    const delta=1;
+    return {required:true,valid:true,tol:0,expected,min:expected-delta,max:expected+delta,variant4856:true,riskNotice:true};
+  }
   const unitKg=Number(p?.peso_kg),tol=Number(p?.especificacoes?.weight_tolerance_pct??5),required=Boolean(p?.especificacoes?.weight_required);
   if(!Number.isFinite(unitKg)||unitKg<=0)return {required,valid:false,tol};
   const expected=unitKg*1000*qty,delta=expected*(tol/100);
@@ -2555,13 +2568,13 @@ async function verifyWithBoreRetry(fd, maxTries=3){
   return last;
 }
 
-$('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result').innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}const x=items[i],remaining=x.quantidade-itemConfirmed,is4856=/\b(48|56)\b/.test(`${x.descricao||''} ${x.modelo||''}`),batchQty=Math.min(is4856?2:10,remaining);$('verify').disabled=true;$('verify').textContent='ANALISANDO...';$('result').innerHTML='';try{const blob=await compress(file,1280,.78),fd=new FormData();fd.append('photo',blob,'photo.jpg');fd.append('ref',x.referencia);fd.append('qty',String(batchQty));fd.append('description',x.descricao||'');fd.append('brand',x.marca||'');fd.append('model',x.modelo||'');if(is4856){const dv=await make4856DualVisionCrops(blob,batchQty);for(const [k,v] of Object.entries(dv))if(v)fd.append(k,v,k+'.jpg');}const stationCfg=loadStationConfig(),cal=window.visualCalibration||stationCfg.visualCalibration||null;
+$('verify').onclick=async()=>{const file=$('photo').files[0];if(!file){$('result').innerHTML='<div class="inc">Tire ou selecione uma foto.</div>';return}const x=items[i],remaining=x.quantidade-itemConfirmed,is4856=/\b(48|56)\b/.test(`${x.descricao||''} ${x.modelo||''}`),batchQty=Math.min(is4856?2:10,remaining);$('verify').disabled=true;$('verify').textContent='ANALISANDO...';$('result').innerHTML='';try{const blob=await compress(file,1280,.78),fd=new FormData();fd.append('photo',blob,'photo.jpg');fd.append('ref',x.referencia);fd.append('qty',String(batchQty));fd.append('description',x.descricao||'');fd.append('brand',x.marca||'');fd.append('model',x.modelo||'');if(false){const dv=await make4856DualVisionCrops(blob,batchQty);for(const [k,v] of Object.entries(dv))if(v)fd.append(k,v,k+'.jpg');}const stationCfg=loadStationConfig(),cal=window.visualCalibration||stationCfg.visualCalibration||null;
 if(cal&&Number(cal.mmPerPixel)>0){
   const vw=Number(cal.videoWidth)||Number($('stationVideo')?.videoWidth)||0;
   const vh=Number(cal.videoHeight)||Number($('stationVideo')?.videoHeight)||0;
   fd.append('visual_calibration',JSON.stringify({...cal,mmPerPixel:Number(cal.mmPerPixel),videoWidth:vw,videoHeight:vh}));
 }
-let d=await verifyWithBoreRetry(fd,3);window.__lastVerifyResult=d;const status=(d.status||'INCONCLUSIVO').toLowerCase(),dbStatus=status==='aprovado'?'aprovado':status==='reprovado'?'reprovado':'inconclusivo';const photoPath=`${session.user.id}/${currentOrder.id}/${x.id}/${Date.now()}-${dbStatus}.jpg`;const {error:upErr}=await db.storage.from('verification-photos').upload(photoPath,blob,{contentType:'image/jpeg',upsert:false});if(upErr)throw new Error('A análise foi concluída, mas a foto não pôde ser salva: '+upErr.message);const {error:attErr}=await db.from('verification_attempts').insert({order_id:currentOrder.id,item_id:x.id,user_id:session.user.id,quantidade_lote:batchQty,quantidade_identificada:Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null,resultado:dbStatus,modelo_identificado:d.identified_model||null,marca_identificada:d.identified_brand||null,motivo:d.reason||null,tipo_erro:d.error_type||null,ai_response:d,foto_path:photoPath});if(attErr){await db.storage.from('verification-photos').remove([photoPath]);throw attErr;}const cls=dbStatus==='aprovado'?'ok':dbStatus==='reprovado'?'bad':'inc';
+let d=await verifyWithBoreRetry(fd,1);window.__lastVerifyResult=d;const status=(d.status||'INCONCLUSIVO').toLowerCase(),dbStatus=status==='aprovado'?'aprovado':status==='reprovado'?'reprovado':'inconclusivo';const photoPath=`${session.user.id}/${currentOrder.id}/${x.id}/${Date.now()}-${dbStatus}.jpg`;const {error:upErr}=await db.storage.from('verification-photos').upload(photoPath,blob,{contentType:'image/jpeg',upsert:false});if(upErr)throw new Error('A análise foi concluída, mas a foto não pôde ser salva: '+upErr.message);const {error:attErr}=await db.from('verification_attempts').insert({order_id:currentOrder.id,item_id:x.id,user_id:session.user.id,quantidade_lote:batchQty,quantidade_identificada:Number.isFinite(Number(d.identified_quantity))?Number(d.identified_quantity):null,resultado:dbStatus,modelo_identificado:d.identified_model||null,marca_identificada:d.identified_brand||null,motivo:d.reason||null,tipo_erro:d.error_type||null,ai_response:d,foto_path:photoPath});if(attErr){await db.storage.from('verification-photos').remove([photoPath]);throw attErr;}const cls=dbStatus==='aprovado'?'ok':dbStatus==='reprovado'?'bad':'inc';
 const reasonTitle=dbStatus==='aprovado'?'APROVADO':d.error_type==='modelo'?'MODELO / ESPECIFICAÇÃO INCORRETA':d.error_type==='quantidade'?'QUANTIDADE INCORRETA':d.error_type==='marca'?'MARCA INCORRETA':d.error_type==='produto'?'PRODUTO INCORRETO':'NÃO FOI POSSÍVEL CONFIRMAR';
 const markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');const evidence=Array.isArray(d.positive_evidence)&&d.positive_evidence.length?d.positive_evidence.join(' • '):'—';
 const contradictions=Array.isArray(d.contradictions)&&d.contradictions.length?d.contradictions.join(' • '):'Nenhuma';
