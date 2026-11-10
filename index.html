@@ -2193,8 +2193,8 @@ async function stationAnalyzeStableWeight(measured){
     setStationState(dimensional4856?'🔵 IA CLASSIFICANDO FURO MAIOR / MENOR...':(activeCal?.mmPerPixel>0?`🔵 IA + MEDIÇÃO CALIBRADA (${Number(activeCal.mmPerPixel).toFixed(4)} mm/px)...`:'🔵 IA CONFERINDO PRODUTO...'),'analyze');
     await $('verify').onclick();
     stationMetricAttempt(window.__lastVerifyResult||{});
-    setTimeout(()=>{
-      if(!station.active)return;
+    // V10.48: conclusão aguardada diretamente, sem timer ou retorno a zero.
+    if(!station.active)return;
       if(visualApproved&&(!cfg.required||weightApproved)){
         // V10.47: aprovação da IA conclui o lote imediatamente, sem exigir leitura de zero.
         // A próxima leitura de mesmo peso fica bloqueada para evitar conferência duplicada.
@@ -2206,7 +2206,7 @@ async function stationAnalyzeStableWeight(measured){
         if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟢 IA APROVOU • finalizando item sem aguardar zero da Urano.';
         station.approvedLots++;stationMetricApproved();
         station.processing=true;
-        finishApprovedBatch(x,batchQty).then(()=>{
+        await finishApprovedBatch(x,batchQty).then(()=>{
           station.processing=false;station.weights=[];station.lastTriggerAt=0;
           if(station.active && currentOrder && i<items.length){
             station.retryCount=0;updateStationCycle();setAutoCycleStep('weight');
@@ -2229,7 +2229,6 @@ async function stationAnalyzeStableWeight(measured){
         }
       }
       station.processing=false;
-    },1200);
   }catch(e){
     station.pendingApproval=null;
     setStationState('🟠 NÃO FOI POSSÍVEL CONFERIR — RETIRE O PRODUTO','inc');
@@ -2566,7 +2565,7 @@ let d=await verifyWithBoreRetry(fd,3);window.__lastVerifyResult=d;const status=(
 const reasonTitle=dbStatus==='aprovado'?'APROVADO':d.error_type==='modelo'?'MODELO / ESPECIFICAÇÃO INCORRETA':d.error_type==='quantidade'?'QUANTIDADE INCORRETA':d.error_type==='marca'?'MARCA INCORRETA':d.error_type==='produto'?'PRODUTO INCORRETO':'NÃO FOI POSSÍVEL CONFIRMAR';
 const markings=Array.isArray(d.visible_markings)?d.visible_markings.join(', '):(d.visible_markings||'Não identificadas');const evidence=Array.isArray(d.positive_evidence)&&d.positive_evidence.length?d.positive_evidence.join(' • '):'—';
 const contradictions=Array.isArray(d.contradictions)&&d.contradictions.length?d.contradictions.join(' • '):'Nenhuma';
-$('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}${d.dual_vision_4856_used?'<div class="small"><b>✓ Visão Dupla 48/56: foto completa + recortes individuais</b></div><br>':''}${d.reference_ab_4856_used?`<div class="small"><b>✓ Comparação A × B: referências reais 48 e 56 carregadas</b> (${Number(d.reference_expected_count||0)} + ${Number(d.reference_opposite_count||0)} fotos)</div><br>`:''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br>${Array.isArray(d.bore_size_classifications)&&d.bore_size_classifications.length?`<b>Classificação dos furos:</b> ${esc(d.bore_size_classifications.map(x=>`Peça ${x.unit}: ${x.size_class} (${x.confidence})`).join(' • '))}<br>`:''}<b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}${renderRejectionCorrection(d,x,batchQty)}${renderRetryGuidance(d,x,batchQty)}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* estação conclui somente após retorno a zero */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
+$('result').innerHTML=`<div class="${cls}"><h3>${esc(reasonTitle)}</h3>${d.reference_image_used?'<div class="small"><b>✓ Foto oficial usada como referência</b></div><br>':''}${d.dual_vision_4856_used?'<div class="small"><b>✓ Visão Dupla 48/56: foto completa + recortes individuais</b></div><br>':''}${d.reference_ab_4856_used?`<div class="small"><b>✓ Comparação A × B: referências reais 48 e 56 carregadas</b> (${Number(d.reference_expected_count||0)} + ${Number(d.reference_opposite_count||0)} fotos)</div><br>`:''}<b>Esperado:</b> ${esc(x.marca)} ${esc(x.modelo)} — ${batchQty} un.<br><b>IA identificou:</b> ${esc(d.identified_brand||'—')} ${esc(d.identified_model||'—')}<br><b>Quantidade vista:</b> ${esc(d.identified_quantity??'—')}<br><b>Atributo decisivo visto:</b> ${esc(d.decisive_attribute_seen||'—')}<br>${Array.isArray(d.bore_size_classifications)&&d.bore_size_classifications.length?`<b>Classificação dos furos:</b> ${esc(d.bore_size_classifications.map(x=>`Peça ${x.unit}: ${x.size_class} (${x.confidence})`).join(' • '))}<br>`:''}<b>Marcações lidas:</b> ${esc(markings)}<br><b>Evidência positiva:</b> ${esc(evidence)}<br><b>Contradições:</b> ${esc(contradictions)}<br>${d.detected_conflicting_code?`<b style="color:#b00020">Código conflitante detectado: ${esc(d.detected_conflicting_code)}</b><br>`:''}<br><b>Motivo:</b> ${esc(d.reason||'—')}${renderRejectionCorrection(d,x,batchQty)}${renderRetryGuidance(d,x,batchQty)}</div>`;if(dbStatus==='aprovado'){visualApproved=true;const wc=weightCfg(currentPickProduct,batchQty);if(station.active){/* V10.48: stationAnalyzeStableWeight conclui diretamente após aprovação. */}else if(wc.required){$('result').innerHTML+=`<div class="inc"><b>Foto aprovada.</b> Agora confirme o peso para liberar este lote.</div>`}else setTimeout(()=>finishApprovedBatch(x,batchQty),900)}}catch(e){$('result').innerHTML=`<div class="err"><h3>ERRO NA ANÁLISE</h3>${esc(e.message||e)}</div>`}finally{$('verify').disabled=false;$('verify').textContent='ANALISAR FOTO'}};
 if($('stationCompleteBack'))$('stationCompleteBack').onclick=()=>{station.startedAt=null;station.approvedLots=0;station.rejectedAttempts=0;show('dashboard');loadDashboard()};
 if($('cameraTest'))$('cameraTest').onclick=async()=>{try{$('cameraSetupInfo').textContent='Solicitando acesso à câmera...';await testSelectedCamera()}catch(e){$('cameraSetupBadge').textContent='ERRO';$('cameraSetupBadge').classList.remove('ok');$('cameraSetupInfo').textContent=e.message||e}};
 
