@@ -2159,8 +2159,19 @@ async function stationAnalyzeStableWeight(measured){
     if(cfg.required&&(measured<cfg.min||measured>cfg.max)){
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_reprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g`});
       station.retryCount++;station.rejectedAttempts++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
-      setAutoCycleStep('remove','bad');setStationState(`🔴 PESO INCORRETO — medido ${measured.toFixed(1)} g • esperado ${cfg.expected.toFixed(1)} g • faixa ${cfg.min.toFixed(2)}–${cfg.max.toFixed(2)} g — RETIRE E TENTE NOVAMENTE`,'bad');station.awaitZero=true;station.processing=false;
-      if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
+      // V10.49.2: peso incorreto permite nova leitura P sem parar a estação.
+      // O protocolo PROT F pode não transmitir zero quando o prato está vazio.
+      // Não liberar nenhuma aprovação: cada nova tentativa exige novo frame estável P.
+      station.awaitZero=false;
+      station.pendingApproval=null;
+      station.processing=false;
+      station.weights=[];
+      station.stableSince=0;
+      station.nextWeightLock=null;
+      clearTimeout(station.autoZeroTimer);
+      setAutoCycleStep('weight','bad');
+      setStationState(`🔴 PESO INCORRETO — medido ${measured.toFixed(1)} g • esperado ${cfg.expected.toFixed(1)} g • faixa ${cfg.min.toFixed(2)}–${cfg.max.toFixed(2)} g — CORRIJA AS PEÇAS E PRESSIONE P NOVAMENTE`,'bad');
+      if($('stationScaleStatus'))$('stationScaleStatus').textContent='🔴 PESO REPROVADO • corrija as peças e pressione P novamente (aguarde 2 s).';
       return;
     }
     setAutoCycleStep('photo');setStationState(cfg.variant4856?'🔵 PESO NA FAIXA 48/56 — RISCO DE RESOLUÇÃO 2 g • FOTO...':'🔵 PESO ESTÁVEL — PREPARANDO FOTO...','analyze');
