@@ -2159,7 +2159,7 @@ async function stationAnalyzeStableWeight(measured){
     if(cfg.required&&(measured<cfg.min||measured>cfg.max)){
       await db.from('order_events').insert({order_id:currentOrder.id,user_id:session.user.id,tipo:'peso_reprovado',descricao:`ESTAÇÃO • REF. ${x.referencia} • esperado ${cfg.expected.toFixed(1)} g • medido ${measured.toFixed(1)} g`});
       station.retryCount++;station.rejectedAttempts++;updateStationCycle();stationLast(`REF. ${x.referencia} • peso reprovado • ${measured.toFixed(1)} g`);
-      setAutoCycleStep('remove','bad');setStationState('🔴 PESO INCORRETO — RETIRE E TENTE NOVAMENTE','bad');station.awaitZero=true;station.processing=false;
+      setAutoCycleStep('remove','bad');setStationState(`🔴 PESO INCORRETO — medido ${measured.toFixed(1)} g • esperado ${cfg.expected.toFixed(1)} g • faixa ${cfg.min.toFixed(2)}–${cfg.max.toFixed(2)} g — RETIRE E TENTE NOVAMENTE`,'bad');station.awaitZero=true;station.processing=false;
       if(!$('weightMode') || $('weightMode').value==='simulacao'){clearTimeout(station.autoZeroTimer);station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&!station.pendingApproval)feedStationWeight(0)},5000)}
       return;
     }
@@ -2279,18 +2279,22 @@ function scaleVariant4856(){
   return has48?{variant:48,unitGrams:43}:{variant:56,unitGrams:44};
 }
 function weightCfg(p,qty){
+  // V10.49.1: sempre usar o peso REAL cadastrado no catálogo.
+  // A versão anterior substituía o cadastro por 44 g (56) / 43 g (48),
+  // causando falsa reprovação de 84 g na REF. 1600 (42 g x 2).
   const special=scaleVariant4856();
-  if(special){
-    const expected=special.unitGrams*qty;
-    // Faixas adjacentes: 48=43 g/un, 56=44 g/un. Precisão Urano: 2 g.
-    // Tolerância de 1 g por lote (não por unidade); valores sobrepostos continuam risco conhecido.
-    const delta=1;
-    return {required:true,valid:true,tol:0,expected,min:expected-delta,max:expected+delta,variant4856:true,riskNotice:true};
+  const unitKg=Number(p?.peso_kg);
+  const rawTol=p?.especificacoes?.weight_tolerance_pct;
+  const configuredTol=(rawTol===null||rawTol===undefined||rawTol==='')?1:Number(rawTol);
+  const tol=special?1:configuredTol;
+  const required=Boolean(special)||Boolean(p?.especificacoes?.weight_required);
+  if(!Number.isFinite(unitKg)||unitKg<=0||!Number.isFinite(tol)||tol<0){
+    return {required,valid:false,tol,variant4856:Boolean(special)};
   }
-  const unitKg=Number(p?.peso_kg),tol=Number(p?.especificacoes?.weight_tolerance_pct??5),required=Boolean(p?.especificacoes?.weight_required);
-  if(!Number.isFinite(unitKg)||unitKg<=0)return {required,valid:false,tol};
-  const expected=unitKg*1000*qty,delta=expected*(tol/100);
-  return {required,valid:true,tol,expected,min:expected-delta,max:expected+delta};
+  const expected=unitKg*1000*qty;
+  const delta=expected*tol/100;
+  return {required,valid:true,tol,expected,min:expected-delta,max:expected+delta,
+    variant4856:Boolean(special),riskNotice:Boolean(special)};
 }
 function showWeightForPick(p,qty){
   currentPickProduct=p;weightApproved=false;visualApproved=false;$('weightResult').innerHTML='';$('weightReading').value='';
