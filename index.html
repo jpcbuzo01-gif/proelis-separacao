@@ -1956,7 +1956,7 @@ async function startStation(){
     const cameraId=$('cameraDevice')?.value||'';
     station.stream=await navigator.mediaDevices.getUserMedia({video:cameraId?{deviceId:{exact:cameraId},width:{ideal:1920},height:{ideal:1080}}:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
     $('stationVideo').srcObject=station.stream;$('stationVideo').classList.remove('hide');$('stationVideoStage')?.classList.remove('hide');
-    station.active=true;station.phase='waiting';setAutoCycleStep('weight');station.startedAt=station.startedAt||Date.now();if(!station.metricRun)stationMetricStart();setOperationMode(true);station.weights=[];station.awaitZero=false;station.pendingApproval=null;setOperationMode(true);
+    station.active=true;station.phase='waiting';setAutoCycleStep('weight');station.startedAt=station.startedAt||Date.now();if(!station.metricRun)stationMetricStart();setOperationMode(true);station.weights=[];station.awaitZero=false;station.pendingApproval=null;station.nextWeightLock=null;setOperationMode(true);
     $('stationStart').classList.add('hide');$('stationStop').classList.remove('hide');
     setStationState(stationPromptPlace(),'wait');
     $('stationSensors').textContent='📷 Câmera ativa • ⚖️ aguardando nova leitura pela tecla P';
@@ -1967,7 +1967,7 @@ async function startStation(){
 }
 function stopStation(){
   station.metricRun=null;
-  station.active=false;station.processing=false;station.awaitZero=false;station.pendingApproval=null;clearInterval(station.simTimer);clearTimeout(station.autoZeroTimer);
+  station.active=false;station.processing=false;station.awaitZero=false;station.pendingApproval=null;station.nextWeightLock=null;clearInterval(station.simTimer);clearTimeout(station.autoZeroTimer);
   if(station.stream)station.stream.getTracks().forEach(t=>t.stop());station.stream=null;
   $('stationVideo').srcObject=null;$('stationVideo').classList.add('hide');$('stationVideoStage')?.classList.add('hide');$('stationFrameGuide')?.classList.add('hide');$('stationStart').classList.remove('hide');$('stationStop').classList.add('hide');
   setOperationMode(false);setStationState('MODO MANUAL','manual');$('stationSensors').textContent='';
@@ -2196,16 +2196,24 @@ async function stationAnalyzeStableWeight(measured){
     setTimeout(()=>{
       if(!station.active)return;
       if(visualApproved&&(!cfg.required||weightApproved)){
-        station.pendingApproval={x,batchQty};stationLast(`REF. ${x.referencia} • aprovado • ${measured.toFixed(1)} g`);
-        setAutoCycleStep('remove');setStationState('🟢 CORRETO — RETIRE O PRODUTO','ok');
-        station.awaitZero=true;
-        if($('stationScaleStatus'))$('stationScaleStatus').innerHTML=(!$('weightMode')||$('weightMode').value==='simulacao')?'<b>Produto aprovado.</b> Simulando retirada automática...':'<b>Produto aprovado.</b> Retire o produto; aguardando retorno real da balança a zero.';
-        // Em simulação, representa automaticamente a balança retornando a zero.
-        // Com a Urano física, o zero virá da própria leitura USB.
-        if(!$('weightMode') || $('weightMode').value==='simulacao'){
-          clearTimeout(station.autoZeroTimer);
-          station.autoZeroTimer=setTimeout(()=>{if(station.active&&station.awaitZero&&station.pendingApproval)feedStationWeight(0)},1200);
-        }
+        // V10.47: aprovação da IA conclui o lote imediatamente, sem exigir leitura de zero.
+        // A próxima leitura de mesmo peso fica bloqueada para evitar conferência duplicada.
+        station.pendingApproval=null;
+        station.awaitZero=false;
+        station.nextWeightLock=measured;
+        stationLast(`REF. ${x.referencia} • aprovado • ${measured.toFixed(1)} g`);
+        setAutoCycleStep('zero');setStationState('🟢 CORRETO — FINALIZANDO AUTOMATICAMENTE...','ok');
+        if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟢 IA APROVOU • finalizando item sem aguardar zero da Urano.';
+        station.approvedLots++;stationMetricApproved();
+        station.processing=true;
+        finishApprovedBatch(x,batchQty).then(()=>{
+          station.processing=false;station.weights=[];station.lastTriggerAt=0;
+          if(station.active && currentOrder && i<items.length){
+            station.retryCount=0;updateStationCycle();setAutoCycleStep('weight');
+            setStationState('🟡 PRÓXIMO ITEM — COLOQUE O NOVO LOTE NA BALANÇA','wait');
+            if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟡 Próximo item pronto. Retire/troque o lote; uma leitura igual à anterior não será reutilizada.';
+          }
+        }).catch(e=>{station.processing=false;setStationState('🟠 ERRO AO FINALIZAR ITEM','inc');if($('stationSensors'))$('stationSensors').textContent=e.message||String(e)});
       }else{
         station.pendingApproval=null;station.retryCount++;station.rejectedAttempts++;updateStationCycle();
         const et=(window.__lastVerifyResult?.error_type||'inconclusivo');
@@ -2348,6 +2356,12 @@ async function readScaleSerial(){
           // Mostrar claramente por que a transição ocorre ou não ocorre.
           if($('stationSensors'))$('stationSensors').textContent=`📷 Câmera pronta • ⚖️ ${g.toFixed(1)} g (PROT F)`;
           if(station.active && g>2 && !station.awaitZero && !station.processing){
+            // Não reutilizar a mesma pesagem para aprovar outro lote.
+            if(Number.isFinite(station.nextWeightLock) && Math.abs(g-station.nextWeightLock)<=Math.max(2,station.nextWeightLock*.02)){
+              if($('stationScaleStatus'))$('stationScaleStatus').textContent='🟡 NOVO LOTE: leitura igual à já aprovada. Retire/troque os produtos antes da próxima conferência.';
+              continue;
+            }
+            station.nextWeightLock=null;
             station.lastWeight=g;
             if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🔵 ${g.toFixed(1)} g RECEBIDOS • iniciando PESO → FOTO`;
             void stationAnalyzeStableWeight(g).catch(e=>{
