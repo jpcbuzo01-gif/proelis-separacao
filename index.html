@@ -849,7 +849,7 @@ body.station-operation #autoCycleSteps{position:sticky;top:4px;z-index:5;backgro
     <div id="stationLast" class="small muted">Última conferência: —</div>
     <div class="station-opbar"><button id="stationOperationMode" class="secondary" type="button">MODO OPERAÇÃO</button><button id="stationEmergencyManual" class="secondary hide" type="button">⚙ CONTROLES / MANUTENÇÃO</button></div>
     <div id="stationScalePanel" class="reference-box" style="margin-top:12px">
-      <b>BALANÇA URANO POP-S 31/2 USB</b><div class="small" style="margin-top:4px;color:#0878ad;font-weight:800">V9.0.1 • Preparada para teste físico quando os equipamentos chegarem</div>
+      <b>BALANÇA URANO POP-S 31/2 USB</b><div class="small" style="margin-top:4px;color:#0878ad;font-weight:800">V10.45 • PROT F: leitura estável por tecla P</div>
       <div id="stationScaleStatus" class="small muted" style="margin-top:5px">Balança física não conectada • Protocolo recomendado: PROT F.</div>
       <div class="row" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
         <button id="stationConnectUrano" type="button">🔌 CONECTAR BALANÇA USB (COM4)</button>
@@ -2334,7 +2334,17 @@ async function readScaleSerial(){
           $('weightReading').value=g.toFixed(1);
           if($('stationScaleStatus'))$('stationScaleStatus').textContent=`🟢 URANO • PESO ESTÁVEL: ${g.toFixed(1)} g`;
           if($('stationSerialDiagnostics'))$('stationSerialDiagnostics').textContent=`PROT F interpretado • peso: ${g.toFixed(1)} g • teste retirada e retorno a zero.`;
-          feedStationWeight(g);
+          // V10.45: PROT F transmite uma leitura estável ao pressionar P.
+          // Não exigir quatro amostras em 1,2 s como no modo de transmissão contínua.
+          // O frame STX...ETX já foi validado pelo parser acima.
+          if(station.active && g>2 && !station.awaitZero && !station.processing){
+            station.lastWeight=g;
+            if($('stationSensors'))$('stationSensors').textContent=`📷 Câmera pronta • ⚖️ ${g.toFixed(1)} g (PROT F)`;
+            stationAnalyzeStableWeight(g);
+          }else{
+            // Mantém leitura do zero para concluir a retirada após aprovação.
+            feedStationWeight(g);
+          }
           continue;
         }
       }
