@@ -42,7 +42,14 @@ async function loadOrders(){
  const selected=$('pickOrder').value;
  const {data,error}=await db.from('orders').select('id,numero_venda,assigned_to,status').in('status',['aguardando','em_separacao']).order('created_at',{ascending:false}).limit(300);
  if(error)throw error;const {data:{user}}=await db.auth.getUser();
- orders=(data||[]).filter(o=>profile.role==='admin'||o.assigned_to===user.id);
+ const candidate=(data||[]).filter(o=>profile.role==='admin'||o.assigned_to===user.id);
+ const releasedIds=new Set();
+ for(let start=0;start<candidate.length;start+=150){
+  const {data:stages,error:stageErr}=await db.from('order_picking_stages').select('order_id,released_at').in('order_id',candidate.slice(start,start+150).map(o=>o.id));
+  if(stageErr)throw stageErr;
+  (stages||[]).forEach(x=>{if(x.released_at)releasedIds.add(x.order_id)});
+ }
+ orders=candidate.filter(o=>!releasedIds.has(o.id));
  $('pickOrder').innerHTML='<option value="">Selecione o pedido</option>'+orders.map(o=>`<option value="${esc(o.id)}">Venda ${esc(o.numero_venda)}</option>`).join('');
  if(orders.some(o=>o.id===selected))$('pickOrder').value=selected;else if(orders.length)$('pickOrder').value=orders[0].id;
  await selectOrder();
@@ -65,8 +72,11 @@ async function selectOrder(){
 $('finishPicking').onclick=()=>safe(async()=>{
  const id=$('pickOrder').value;if(!id)throw Error('Selecione um pedido');
  if(!confirm('Finalizar a separação deste pedido e liberar a conferência?'))return;
- const {error}=await db.rpc('finish_order_picking',{p_order:id});if(error)throw error;
- msg('Separação concluída! Pedido liberado para conferência.');await loadOrders();tab('separar');
+ const {data:result,error}=await db.rpc('finish_order_picking',{p_order:id});if(error)throw error;
+ if(!result?.ok)throw Error('O servidor não confirmou a finalização da separação.');
+ const {data:stage,error:stageError}=await db.from('order_picking_stages').select('released_at').eq('order_id',id).maybeSingle();
+ if(stageError||!stage?.released_at)throw Error('A finalização não foi confirmada no banco. Atualize e tente novamente sem repetir a retirada.');
+ await loadOrders();tab('separar');msg('Separação concluída! Pedido liberado para conferência. Próximo pedido disponível.');
 });
 function itemInfo(){validated=false;$('pickConfirm').disabled=true;$('pickValidated').textContent='Aguardando QR correto.';const x=orderItems.find(y=>y.id===$('pickItem').value);if(!x){$('pickInfo').textContent='Selecione o item';return}const p=products.find(y=>String(y.referencia)===String(x.referencia));$('pickQty').value=x.quantidade;$('pickInfo').innerHTML=`<b>${esc(x.descricao)}</b><div>REF. ${esc(x.referencia)} · ${x.quantidade} unidades</div><div>📍 ${esc(p?loc(stockOf(p)):'Produto não cadastrado')}</div>`}
 $('pickOrder').onchange=selectOrder;$('pickItem').onchange=itemInfo;
